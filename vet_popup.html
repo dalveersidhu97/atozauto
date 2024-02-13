@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>a to z Auto | VET
+  </title>
+  <script src="utils.js" defer></script>
+  <script src="vet_popup.js" defer></script>
+  <link rel="stylesheet" href="./popup.css" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+</head>
+
+<body>
+  <div id="wrapper">
+    <div class="container flex flex-column">
+      <h1 class="header flex gap-5">
+        <span class="auto">auto</span>
+        <span class="az">
+          <span>a</span>
+          <span class="text-small to" style="margin-top: 4px;">to</span>
+          <span>z</span>
+        </span>
+      </h1>
+      <div class="flex flex-column gap-20 px-10">
+        <!-- <div class="flex flex-column items-center gap-5">
+          <div class="picture shrink-0">
+          </div>
+          <h1 class="text-lg font-medium">Parneet Kaur</h1>
+        </div> -->
+        <div class="tabs-container flex gap-10">
+          <a href="popup.html" class="tab p-10" id="vet_tab">VTO</a>
+          <a href="vet_popup.html" class="tab p-10 tab-active" id="vet_tab">VET</a>
+        </div>
+        <div class="px-10 flex flex-column gap-20">
+          <div class="dropdown-container">
+            <select name="startOp" id="startOp" class="dropdown flex">
+              <option value="eq">From</option>
+              <option value="gt">After</option>
+              <option value="lt">Before</option>
+              <option value="gte">At After</option>
+              <option value="lte">At Before</option>
+            </select>
+            <input type="datetime-local" class="date-input" id="startDate" />
+          </div>
+          <div class="dropdown-container">
+            <select name="endOp" id="endOp" class="dropdown flex">
+              <option value="eq">To</option>
+              <option value="gt">After</option>
+              <option value="lt">Before</option>
+              <option value="gte">At After</option>
+              <option value="lte">At Before</option>
+            </select>
+            <input type="datetime-local" class="date-input" id="endDate" />
+          </div>
+          <div class="flex items-center gap-10">
+            <div class="flex items-center gap-5">
+              <input type="radio" id="mandatoryRadio" name="isMust" value="mandatory" checked />
+              <label for="mandatoryRadio">Mandantory</label>
+            </div>
+            <div class="flex items-center gap-5">
+              <input type="radio" id="optionalRadio" name="isMust" value="optional" />
+              <label for="optionalRadio">Optional</label>
+            </div>
+          </div>
+
+          <div class="flex gap-10">
+            <button class="blue grow-1 button" id="addVETFilter">Add VET Filter</button>
+          </div>
+          <div class=" flex flex-column gap-20">
+            <div class="flex space-between ">
+              <h2 class="text-md font-medium">Active VET Filters</h2>
+              <button class="grey button" id="clearVETFilters">Clear Filters</button>
+            </div>
+            <div id="filters" class="flex flex-column gap-20">
+              <!-- <div class="card flex flex-column gap-10">
+                <h4>12 Feb, Fri (Mandantory)</h4>
+                <div>Start Time <i>(greater than or equals to)</i>: <b>1:20a.m.</b></div>
+                <div>End Time <i>(equals to)</i>: <b>11:50a.m.</b></div>
+                <div>10 hours 30 mins</div>
+              </div> -->
+            </div>
+          </div>
+          <br />
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

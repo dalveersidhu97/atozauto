@@ -1,0 +1,21 @@
+{
+  "name": "AZAuto",
+  "version": "0.1",
+  "manifest_version": 3,
+  "permissions": ["scripting", "activeTab", "storage"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://atoz.amazon.work/voluntary_time_off/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://atoz.amazon.work/shifts/schedule/find*"],
+      "js": ["vet-script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
