@@ -8,6 +8,11 @@
   },
   "content_scripts": [
     {
+      "matches": ["https://atoz.amazon.work/*"],
+      "js": ["userinfo-script.js"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": ["https://atoz.amazon.work/voluntary_time_off/*"],
       "js": ["content-script.js"],
       "run_at": "document_idle"

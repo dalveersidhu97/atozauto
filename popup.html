@@ -15,25 +15,26 @@
 <body>
   <div id="wrapper">
     <div class="container flex flex-column">
-      <h1 class="header flex gap-5">
+      <h1 class="header flex gap-5 items-center">
         <span class="auto">auto</span>
         <span class="az">
           <span>a</span>
           <span class="text-small to" style="margin-top: 4px;">to</span> 
           <span>z</span>
-        </span> 
+        </span>
+        <span id="userImage"></span>
+        <span id="userName"></span>
       </h1>
       <div class="flex flex-column gap-20 px-10">
-        <!-- <div class="flex flex-column items-center gap-5">
-          <div class="picture shrink-0">
-          </div>
-          <h1 class="text-lg font-medium">Parneet Kaur</h1>
-        </div> -->
         <div class="tabs-container flex gap-10">
           <a href="popup.html" class="tab p-10 tab-active" id="vet_tab">VTO</a>
           <a href="vet_popup.html" class="tab p-10" id="vet_tab">VET</a>
         </div>
         <div class="px-10 flex flex-column gap-20">
+          <div class="flex">
+            <label for="forName" class="dropdown" style="font-weight: 600;background: #efefef;padding: 10px 20px;">For</label>
+            <input type="text" class="date-input" id="forName" placeholder="First name" />
+          </div>
           <div class="dropdown-container">
             <select name="startOp" id="startOp" class="dropdown flex">
               <option value="eq">From</option>
@@ -53,16 +54,6 @@
               <option value="lte">At Before</option>
             </select>
             <input type="datetime-local" class="date-input" id="endDate" />
-          </div>
-          <div class="flex items-center gap-10">
-            <div class="flex items-center gap-5">
-              <input type="radio" id="mandatoryRadio" name="isMust" value="mandatory" checked />
-              <label for="mandatoryRadio">Mandantory</label>
-            </div>
-            <div class="flex items-center gap-5">
-              <input type="radio" id="optionalRadio" name="isMust" value="optional" />
-              <label for="optionalRadio">Optional</label>
-            </div>
           </div>
 
           <div class="flex gap-10">

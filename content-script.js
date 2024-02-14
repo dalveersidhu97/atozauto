@@ -13,6 +13,21 @@ const convertTimeToMins = (timeStr) => {
     return time;
 }
 
+const getUserInfo = () => {
+    const navbar = document.querySelector('#navbar-menu');
+    const img = navbar.querySelector(`img[alt="User's avatar"]`);
+    const name = img.parentElement.parentElement.innerText;
+    console.log(name, img.getAttribute('src'));
+    return { name, img: img.getAttribute('src') }
+}
+
+const setUserInfo = () => {
+    const userInfo = getUserInfo();
+    chrome.storage.local.get(null, function (result) {
+        chrome.storage.local.set({ ...result, userInfo });
+    });
+}
+
 const getVtos = () => {
     const vtos = [];
     const expanders = document.querySelectorAll('div[data-test-component="StencilExpander"]');
@@ -54,15 +69,17 @@ const is = (val1, op, val2) => {
         case 'lte': { if (val1 <= val2) isValid = true; break; }
         case 'eq': { if (val1 === val2) isValid = true; break; }
     }
-    // console.log(val1, op, val2, isValid)
+    console.log(val1, op, val2, isValid)
     return isValid;
 }
 
 const validateVTOFilter = (vto, filter) => {
+    const userName = getUserInfo().name;
     const vtoDate = vto.date.split(',')[0].toLowerCase();
     const requiredDate = filter.date.split(',')[0].toLowerCase();
-    console.log(vtoDate, '===', requiredDate);
+    if (filter.forName.toLowerCase() !== userName.toLowerCase()) return false;
     if (vtoDate !== requiredDate) return false;
+    console.log(vtoDate, '===', requiredDate);
 
     const startTimeOp = Object.keys(filter.startTime)[0];
     const startTime = filter.startTime[startTimeOp];
@@ -72,16 +89,15 @@ const validateVTOFilter = (vto, filter) => {
     const isStartTimeValid = is(vto.startTime, startTimeOp, startTime);
     const isEndTimeValid = is(vto.endTime, endTimeOp, endTime);
     const isValid = isStartTimeValid && isEndTimeValid;
-    console.log({ isValid, isMust: filter.isMust, isStartTimeValid, isEndTimeValid });
-    return isValid ? isValid : filter.isMust ? false : true;
+    return isValid;
 }
 
 const isVTOAcceptable = (vtoFilters, vto) => {
     for (let i = 0; i < vtoFilters.length; i++) {
         const isFilterValid = validateVTOFilter(vto, vtoFilters[i]);
-        if (!isFilterValid) return false;
+        if (isFilterValid) return vtoFilters[i];
     }
-    return true;
+    return false;
 }
 
 
@@ -99,46 +115,74 @@ const isVTOAcceptable = (vtoFilters, vto) => {
 //     {
 //         startTime: { gt: 300 },
 //         endTime: { lt: 710 },
-//         isMust: false,
 //         date: "Feb 09, Fri",
+//         forName: "Dalveer",
 //     },
 // ];
 
 function contains(context, selector, text) {
     var elements = context.querySelectorAll(selector);
-    return Array.prototype.filter.call(elements, function (element) {
-        return RegExp(text).test(element.textContent);
+    for (let i = 0; i < elements.length; i++) {
+        const element = elements[i];
+        if (RegExp(text).test(element.innerText)) return element;
+    }
+    return undefined;
+}
+
+const removeFilter = (filterKey, filterToDelete) => {
+    chrome.storage.local.get(null, function (result) {
+        const filters = result[filterKey] || [];
+        const newFilters = filters.filter(filter => {
+            if (JSON.stringify(filterToDelete) === JSON.stringify(filter)) {
+                return false
+            }
+            return true;
+        });
+        chrome.storage.local.set({ ...result, [filterKey]: newFilters });
     });
 }
 
-const acceptVTO = (vto) => {
+const pressModalButton = (regex, callBack) => {
+    const modal = document.querySelector('div[data-test-component="StencilModal"]');
+    if (!modal) {
+        console.log('No modal');
+        return false;
+    }
+    const button = contains(modal, 'button', regex);
+    if (!button) {
+        console.log('No button');
+        return false;
+    }
+    button.click();
+    callBack && callBack();
+}
+
+const acceptVTO = (vto, callBack) => {
     console.log('Click VTO Button', vto);
     vto.button.click()
     setTimeout(() => {
-        const modal = document.querySelector('div[data-test-component="StencilModal"]');
-        if (!modal) {
-            console.log('No confirm modal');
-            return false;
-        }
-        const acceptButton = contains(modal, 'button', 'Accept VTO');
-        if (!acceptButton) {
-            console.log('No confirm button');
-            return false;
-        }
-        // acceptButton.click();
-        console.log('Confirm button clicked', acceptButton);
-        return true;
+        pressModalButton(/^Accept VTO$/i, ()=>{
+            callBack && callBack();
+            let counter = 1;
+            const interval = setInterval(()=>{
+                if(counter<=10) clearInterval(interval);
+                pressModalButton(/^ok$/i, ()=>clearInterval(interval));
+                counter++;
+            }, 500)
+        });
+        // pressModalButton(/^CANCEL$/i);
     }, 1000)
 }
-
 
 const main = () => {
 
     chrome.storage.local.get('filters', function (result) {
-        const filters = result.filters || [];
+        const userName = getUserInfo().name;
+        const filters = result.filters.filter(f=>f.forName.toLowerCase()===userName.toLowerCase()) || [];
         console.log('filters', filters);
+        if (!filters.length) return;
 
-        const vtos = getVtos();
+        let vtos = getVtos();
         console.log({ vtos });
         let acceptableVTOs = 0;
         const gapSeconds = 3000;
@@ -146,9 +190,16 @@ const main = () => {
 
         for (let i = 0; i < vtos.length; i++) {
             const vto = vtos[i];
-            if (isVTOAcceptable(filters, vto)) {
+            const matchedFilter = isVTOAcceptable(filters, vto);
+            if (!!matchedFilter) {
                 setTimeout(() => {
-                    acceptVTO(vto);
+                    acceptVTO(vto, () => {
+                        removeFilter('filters', matchedFilter);
+                        vtos = vtos.filter(v => {
+                            if (JSON.stringify(v) === JSON.stringify(vto)) return false;
+                            return true;
+                        });
+                    });
                 }, acceptableVTOs * gapSeconds);
                 acceptableVTOs++;
             }
@@ -180,6 +231,7 @@ const loaded = () => {
 }
 
 console.clear();
+setUserInfo();
 const inverval = setInterval(() => {
     if (loaded()) {
         clearInterval(inverval);
@@ -187,13 +239,14 @@ const inverval = setInterval(() => {
     }
 }, 200);
 
-const sessionInterval = setInterval(()=>{
+const sessionInterval = setInterval(() => {
     const sessionModal = document.querySelector('div[aria-describedby="sr-session-expires-modal-message"]');
     if (!sessionModal) return;
     const styles = window.getComputedStyle(sessionModal);
-    if (styles.display!=='none') {
+    if (styles.display !== 'none') {
         const stayLoggedInButton = sessionModal.querySelector('#session-expires-modal-btn-stay-in');
         stayLoggedInButton.click();
+        sessionModal.style.display = 'none';
         console.log('modal is visible')
     }
 }, 300);

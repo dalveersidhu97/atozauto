@@ -87,7 +87,6 @@ const refreshFilters = (filterKey) => {
         //   {
         //     startTime: { gt: 300 },
         //     endTime: { lt: 710 },
-        //     isMust: false,
         //     date: "Feb 09, Fri",
         //   },
         // ];
@@ -102,7 +101,7 @@ const refreshFilters = (filterKey) => {
             const endTime = filter.endTime[endOp];
             filtersHTML = filtersHTML + `
         <div class="card flex flex-column gap-10">
-          <h4>${filter.date} (${filter.isMust ? 'Mandantory' : 'Optional'})</h4>
+          <h4>${filter.date} (${filter.forName})</h4>
           <div>Start Time <i>(${opToText(startOp)})</i>: <b>${intToTime(startTime)}</b></div>
           <div>End Time <i>(${opToText(endOp)})</i>: <b>${intToTime(endTime)}</b></div>
           <div>${intToString(endTime - startTime)}</div>
@@ -117,27 +116,40 @@ const refreshFilters = (filterKey) => {
 const addFilter = (filterKey) => {
     const startDatePicker = document.getElementById('startDate');
     const endDatePicker = document.getElementById('endDate');
-    const selectMandantory = document.querySelector('input[name="isMust"]:checked').value;
-    const isMust = selectMandantory === 'mandatory' ? true : false;
     const startDate = new Date(startDatePicker.value);
     const endDate = new Date(endDatePicker.value);
     const startTime = convertTimeToMins(formatTime(startDate));
     const endTime = convertTimeToMins(formatTime(endDate));
     const opStart = document.querySelector("#startOp").value;
     const opEnd = document.querySelector("#endOp").value;
+    const forName = document.getElementById('forName').value;
 
 
     const selectedDate = new Date(startDate);
     const data = {
         startTime: { [opStart]: startTime },
         endTime: { [opEnd]: endTime },
-        isMust: isMust,
         date: formatDate(selectedDate),
+        forName
     };
 
     chrome.storage.local.get(null, function (result) {
         const filters = result[filterKey] || [];
         const newFilters = [...filters, data];
+        chrome.storage.local.set({ ...result, [filterKey]: newFilters });
+        refreshFilters(filterKey);
+    });
+}
+
+const removeFilter = (filterKey, filterToDelete, callBack) => {
+    chrome.storage.local.get(null, function (result) {
+        const filters = result[filterKey] || [];
+        const newFilters = filters.filter(filter => {
+            if (JSON.stringify(filterToDelete) === filter) {
+                return false
+            }
+            return true;
+        });
         chrome.storage.local.set({ ...result, [filterKey]: newFilters });
         refreshFilters(filterKey);
     });
@@ -149,3 +161,17 @@ const clearFilters = (filterKey) => {
         refreshFilters(filterKey);
     })
 }
+
+const refreshUserInfo = () => {
+    chrome.storage.local.get(null, function (result) {
+        const userInfo = result.userInfo;
+        if (!userInfo) return;
+        document.getElementById('userName').innerText = userInfo.name;
+        // document.getElementById('userImage').innerHTML = `<img src="${userInfo.img}" />`;
+        document.getElementById('forName').value = userInfo.name;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    refreshUserInfo();
+});

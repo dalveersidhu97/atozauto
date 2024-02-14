@@ -37,6 +37,13 @@ body {
 .items-center {
   align-items: center;
 }
+.items-start {
+  align-items: flex-start;
+}
+.items-end {
+  align-items: flex-end;
+}
+
 
 .shrink-0 {
   flex-shrink: 0;
@@ -95,6 +102,16 @@ body {
 
 }
 
+#userName {
+  font-size: 16px;
+  font-weight: normal;
+  color: white;
+}
+#userImage {
+  margin-right: 3px;
+  margin-left: auto;
+}
+
 .dropdown-container {
   display: flex;
 }
@@ -116,6 +133,12 @@ body {
   border: .5px solid grey;
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
+}
+.input {
+  width: 100%;
+  padding: 10px;
+  border: .5px solid grey;
+  border-radius: 5px;
 }
 
 .grey {
