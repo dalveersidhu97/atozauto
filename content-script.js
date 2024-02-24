@@ -185,8 +185,8 @@ const main = () => {
         let vtos = getVtos();
         console.log({ vtos });
         let acceptableVTOs = 0;
-        const gapSeconds = 3000;
-        let reloadAfter = 25000;
+        const gapSeconds = 3500;
+        let reloadAfter = 20000;
 
         for (let i = 0; i < vtos.length; i++) {
             const vto = vtos[i];
@@ -207,7 +207,7 @@ const main = () => {
         const currentMins = new Date().getMinutes();
         console.log(currentMins);
         if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-            reloadAfter = 1000;
+            reloadAfter = 200;
         }
         if (acceptableVTOs) {
             reloadAfter = reloadAfter + acceptableVTOs * gapSeconds;
