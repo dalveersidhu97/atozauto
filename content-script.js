@@ -207,7 +207,7 @@ const main = () => {
         const currentMins = new Date().getMinutes();
         console.log(currentMins);
         if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-            reloadAfter = 200;
+            reloadAfter = 600;
         }
         if (acceptableVTOs) {
             reloadAfter = reloadAfter + acceptableVTOs * gapSeconds;
