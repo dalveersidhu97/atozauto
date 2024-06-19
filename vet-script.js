@@ -39,18 +39,26 @@ const acceptVET = (vto, callBack) => {
     console.log('Click VET Button', vto);
     vto.button.click()
     setTimeout(() => {
-        // pressModalButton(/^yes, add shift$/i, ()=>{
-        //     callBack && callBack();
-        //     let counter = 1;
-        //     const interval = setInterval(()=>{
-        //         if(counter<=10) clearInterval(interval);
-        //         pressModalButton(/^done$/i, ()=>clearInterval(interval));
-        //         pressModalButton(/^ok$/i, ()=>clearInterval(interval));
-        //         counter++;
-        //     }, 500);
-        // });
-        setTimeout(() => closeModal(callBack), 200);
-    }, 200)
+        pressModalButton(/^yes, add shift$/i, ()=>{
+            let counter = 1;
+            const interval = setInterval(()=>{
+                if(counter<=5) {
+                    clearInterval(interval);
+                    !!callBack && callBack();
+                }
+                pressModalButtonTemp(/^done$/i, ()=>{
+                    clearInterval(interval);
+                    !!callBack && callBack();
+                });
+                pressModalButtonTemp(/^ok$/i, ()=>{
+                    clearInterval(interval);
+                    !!callBack && callBack();
+                });
+                counter++;
+            }, 150);
+        });
+        // setTimeout(() => closeModal(callBack), 200);
+    }, 0)
 }
 const selectDay = (date, callback) => {
     const daySelector = document.querySelector('div[data-test-id="day-selector"]');
@@ -60,7 +68,7 @@ const selectDay = (date, callback) => {
     cards.forEach(card => {
         if (card.innerText.includes(date)) {
             card.click();
-            setTimeout(callback, 200);
+            setTimeout(callback, 0);
         }
     })
 }
@@ -125,7 +133,7 @@ const main = () => {
                 acceptVETs(callBack)
             });
         }, () => {
-            let reloadDelay = 1000;
+            let reloadDelay = 25000;
             clearInterval(timeRecorder);
             const currentMins = new Date().getMinutes();
             console.log(currentMins);
@@ -172,7 +180,7 @@ const inverval = setInterval(() => {
         clearInterval(inverval);
         main();
     }
-}, 200);
+}, 100);
 
 const sessionInterval = setInterval(() => {
     const sessionModal = document.querySelector('div[aria-describedby="sr-session-expires-modal-message"]');

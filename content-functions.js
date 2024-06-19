@@ -123,7 +123,21 @@ const removeFilter = (filterKey, filterToDelete) => {
 }
 
 const pressModalButton = (regex, callBack) => {
-    const modal = document.querySelector('div[data-test-component="StencilModal"]');
+    const modal = document.querySelector('div[data-test-component="StencilModal"]'); // try role="dialog"
+    if (!modal) {
+        console.log('No modal');
+        return false;
+    }
+    const button = contains(modal, 'button', regex);
+    if (!button) {
+        console.log('No button', regex);
+        return false;
+    }
+    button.click();
+    callBack && callBack();
+}
+const pressModalButtonTemp = (regex, callBack) => {
+    const modal = document.querySelector('div[role="dialog"]');
     if (!modal) {
         console.log('No modal');
         return false;
@@ -138,7 +152,7 @@ const pressModalButton = (regex, callBack) => {
 }
 
 const closeModal = (callBack) => {
-    const modal = document.querySelector('div[data-test-component="StencilModal"]');
+    const modal = document.querySelector('div[data-test-component="StencilModal"]'); // try role="dialog"
     if (!modal) {
         console.log('No modal');
         callBack && callBack();
