@@ -37,7 +37,7 @@ const getVets = () => {
 
 const acceptVET = (vto, callBack) => {
     console.log('Click VET Button', vto);
-    vto.button.click()
+    vto.button.click();
     setTimeout(() => {
         pressModalButton(/^yes, add shift$/i, ()=>{
             let counter = 1;
@@ -104,28 +104,30 @@ const main = () => {
         const acceptVETs = (callBackOuter) => {
             let vets = getVets();
             console.log('Ready VETS', { vets });
-            let acceptableVETs = [];
+            let acceptables = [];
             for (let i = 0; i < vets.length; i++) {
                 const vet = vets[i];
-                const acceptableVET = isVTOAcceptable(filters, vet);
-                if (!!acceptableVET) {
-                    acceptableVETs.push(vet);
+                const acceptableFilter = isVTOAcceptable(filters, vet);
+                if (!!acceptableFilter) {
+                    acceptables.push({vet, filter: acceptableFilter});
                 }
             }
 
-            looper(acceptableVETs, (vet, callBack) => {
+            looper(acceptables, (acceptable, callBack) => {
+                const vet = acceptable.vet;
+                const filter = acceptable.filter;
                 acceptVET(vet, () => {
-                    // removeFilter('vetFilters', acceptableFilter);
-                    // vets = vets.filter(v => {
-                    //     if (JSON.stringify(v) === JSON.stringify(vet)) return false;
-                    //     return true;
-                    // });
+                    removeFilter('vetFilters', filter);
+                    vets = vets.filter(v => {
+                        if (JSON.stringify(v) === JSON.stringify(vet)) return false;
+                        return true;
+                    });
                     callBack();
                 });
             }, callBackOuter, 'AcceptVETSLooper', 0);
         }
         let secondsUsed = 0;
-        const timeRecorder = setInterval(()=>secondsUsed=secondsUsed+1, 1000);
+        const timeRecorder = setInterval(()=>secondsUsed=secondsUsed+1000, 1000);
 
         looper(filters, (filter, callBack) => {
             let date = filter.date.split(',')[0];
@@ -133,7 +135,8 @@ const main = () => {
                 acceptVETs(callBack)
             });
         }, () => {
-            let reloadDelay = 25000;
+            if (!filters.length) return;
+            let reloadDelay = 20000;
             clearInterval(timeRecorder);
             const currentMins = new Date().getMinutes();
             console.log(currentMins);
@@ -144,20 +147,6 @@ const main = () => {
             console.log(`Reloading in ${reloadAfter/1000} seconds`);
             setTimeout(()=>window.location.reload(), reloadAfter);
         }, 'SelectDayLooper', 0)
-
-        // if (!filters.length) return;
-
-        // const currentMins = new Date().getMinutes();
-        // console.log(currentMins);
-        // if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-        //     reloadAfter = 1000;
-        // }
-        // if (acceptableVTOs) {
-        //     reloadAfter = reloadAfter + acceptableVTOs * gapSeconds;
-        // }
-        // filters.length > 0 && console.log(`Accepted ${acceptableVTOs} VET(s), Reloading in: `, reloadAfter / 1000, 'Seconds');
-
-        // filters.length > 0 && setTimeout(() => window.location.reload(), reloadAfter);
     });
 
 }
