@@ -9,7 +9,7 @@
   "content_scripts": [
     {
       "matches": ["https://atoz.amazon.work/*"],
-      "js": ["userinfo-script.js"],
+      "js": ["userinfo-script.js", "content-functions.js"],
       "run_at": "document_idle"
     },
     {

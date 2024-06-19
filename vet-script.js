@@ -1,42 +1,19 @@
-const convertTimeToMins = (timeStr) => {
-    let time = 0;
-    const calcMins = (hours, mins) => {
-        return hours * 60 + mins;
-    }
-    if (timeStr.endsWith('a.m.')) {
-        const units = timeStr.replace('a.m.', '').split(':');
-        time = calcMins(+units[0], +units[1]);
-    } else if (timeStr.endsWith('p.m.')) {
-        const units = timeStr.replace('p.m.', '').split(':');
-        time = 720 + calcMins(+units[0], +units[1]);
-    }
-    return time;
-}
-
-function extractDateFromVetHeader(inputString) {
-    const regex = /\b\w{3}, (\w{3} \d{1,2})\b/;
-    const match = inputString.match(regex);
-
-    if (match) {
-        return match[1];
-    } else {
-        return undefined;
-    }
-}
 
 const getVets = () => {
     const vets = [];
     const presentations = document.querySelectorAll('div[role="presentation"]');
+    const presentation0 = presentations[0];
+    const listHeader = presentation0.querySelector('div[data-test-id="ClaimedShiftsColHeader"]');
+    const listHeaderText = listHeader.innerText;
+    const dateStr = extractDateFromVetHeader(listHeaderText);
+
     presentations.forEach(presentation => {
-        const listHeaderText = presentation.querySelector('div[data-test-id="ClaimedShiftsColHeader"]').innerText;
-        const dateStr = extractDateFromVetHeader(listHeaderText);
-        console.log(dateStr)
         const items = presentation.querySelectorAll('div[role="listitem"]')
         console.log(items.length);
         items.forEach(listItem => {
             const heading = listItem.querySelector('div[role="heading"]');
-            // const button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]');
-            const button = listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]');
+            const button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]');
+            // const button = listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]');
             if (button) {
                 const timeStr = heading.innerText.split(' ')[0];
                 const startTimeStr = timeStr.split('-')[0];
@@ -58,130 +35,24 @@ const getVets = () => {
     return vets;
 }
 
-const getUserInfo = () => {
-    const navbar = document.querySelector('#navbar-menu');
-    const img = navbar.querySelector(`img[alt="User's avatar"]`);
-    const name = img.parentElement.parentElement.innerText;
-    console.log(name, img.getAttribute('src'));
-    return { name, img: img.getAttribute('src') }
-}
-
-const setUserInfo = () => {
-    const userInfo = getUserInfo();
-    chrome.storage.local.get(null, function (result) {
-        chrome.storage.local.set({ ...result, userInfo });
-    });
-}
-
-const is = (val1, op, val2) => {
-    let isValid = false;
-    switch (op) {
-        case 'gt': { if (val1 > val2) isValid = true; break; }
-        case 'gte': { if (val1 >= val2) isValid = true; break; }
-        case 'lt': { if (val1 < val2) isValid = true; break; }
-        case 'lte': { if (val1 <= val2) isValid = true; break; }
-        case 'eq': { if (val1 === val2) isValid = true; break; }
-    }
-    console.log(val1, op, val2, isValid)
-    return isValid;
-}
-
-const validateVTOFilter = (vto, filter) => {
-    const userName = getUserInfo().name;
-    const vtoDate = vto.date.split(',')[0].toLowerCase();
-    const requiredDate = filter.date.split(',')[0].toLowerCase();
-    if (filter.forName.toLowerCase() !== userName.toLowerCase()) return false;
-    if (vtoDate !== requiredDate) return false;
-    console.log(vtoDate, '===', requiredDate);
-
-    const startTimeOp = Object.keys(filter.startTime)[0];
-    const startTime = filter.startTime[startTimeOp];
-    const endTimeOp = Object.keys(filter.endTime)[0];
-    const endTime = filter.endTime[endTimeOp];
-
-    const isStartTimeValid = is(vto.startTime, startTimeOp, startTime);
-    const isEndTimeValid = is(vto.endTime, endTimeOp, endTime);
-    const isValid = isStartTimeValid && isEndTimeValid;
-    return isValid;
-}
-
-const isVTOAcceptable = (vtoFilters, vto) => {
-    for (let i = 0; i < vtoFilters.length; i++) {
-        const isFilterValid = validateVTOFilter(vto, vtoFilters[i]);
-        if (isFilterValid) return vtoFilters[i];
-    }
-    return false;
-}
-
-function contains(context, selector, text) {
-    var elements = context.querySelectorAll(selector);
-    for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
-        if (RegExp(text).test(element.innerText)) return element;
-    }
-    return undefined;
-}
-
-const removeFilter = (filterKey, filterToDelete) => {
-    chrome.storage.local.get(null, function (result) {
-        const filters = result[filterKey] || [];
-        const newFilters = filters.filter(filter => {
-            if (JSON.stringify(filterToDelete) === JSON.stringify(filter)) {
-                return false
-            }
-            return true;
-        });
-        chrome.storage.local.set({ ...result, [filterKey]: newFilters });
-    });
-}
-
-const pressModalButton = (regex, callBack) => {
-    const modal = document.querySelector('div[data-test-component="StencilModal"]');
-    if (!modal) {
-        console.log('No modal');
-        return false;
-    }
-    const button = contains(modal, 'button', regex);
-    if (!button) {
-        console.log('No button');
-        return false;
-    }
-    button.click();
-    callBack && callBack();
-}
-
-const closeModal = (callBack) => {
-    const modal = document.querySelector('div[data-test-component="StencilModal"]');
-    if (!modal) {
-        console.log('No modal');
-        return false;
-    }
-    const button = contains(modal, 'button[data-test-component="ModalCloseButton"]', '');
-    if (!button) {
-        console.log('No button');
-        return false;
-    }
-    button.click();
-    callBack && callBack();
-}
-
-const acceptVTO = (vto, callBack) => {
-    console.log('Click VTO Button', vto);
+const acceptVET = (vto, callBack) => {
+    console.log('Click VET Button', vto);
     vto.button.click()
     setTimeout(() => {
-        // pressModalButton(/^add shift$/i, ()=>{
+        // pressModalButton(/^yes, add shift$/i, ()=>{
         //     callBack && callBack();
         //     let counter = 1;
         //     const interval = setInterval(()=>{
         //         if(counter<=10) clearInterval(interval);
+        //         pressModalButton(/^done$/i, ()=>clearInterval(interval));
         //         pressModalButton(/^ok$/i, ()=>clearInterval(interval));
         //         counter++;
-        //     }, 500)
+        //     }, 500);
         // });
-        closeModal(callBack);
-    }, 1000)
+        setTimeout(() => closeModal(callBack), 200);
+    }, 200)
 }
-const selectDay = (date) => {
+const selectDay = (date, callback) => {
     const daySelector = document.querySelector('div[data-test-id="day-selector"]');
     if (!daySelector) return;
     const tabList = daySelector.querySelector('div[role="tablist"]');
@@ -189,8 +60,31 @@ const selectDay = (date) => {
     cards.forEach(card => {
         if (card.innerText.includes(date)) {
             card.click();
+            setTimeout(callback, 200);
         }
     })
+}
+
+const looper = (arr, fn, whenDoneFn, loopName, delayTime, index) => {
+    console.log(loopName, ': Entering', (index||0)+1, '/', arr.length);
+    let i = index || 0;
+    let delay = delayTime || 0;
+    if (arr.length > i){
+        console.log(loopName, ': Starting');
+        const fnToCall = ()=>fn(arr[i], () => {
+            if (arr.length - 1 > i) {
+                loopName && console.log(loopName, ': Next');
+                looper(arr, fn, whenDoneFn, loopName, delay, i + 1);
+            }else {
+                whenDoneFn()
+                loopName && console.log(loopName, ': Done')
+            };
+        });
+        setTimeout(fnToCall, delay);
+    }else {
+        whenDoneFn()
+        loopName && console.log(loopName, ': END')
+    }
 }
 
 const main = () => {
@@ -199,49 +93,95 @@ const main = () => {
         const filters = result.vetFilters || [];
         console.log('vetFilters', filters);
 
-        for (let i = 0; i < filters.length; i++) {
-            const filter = filters[i];
-            const date = filter.date.split(',')[0];
-            selectDay(date);
-        }
-
-        if (!filters.length) return;
-        let vets = getVets();
-        console.log({vets});
-        let acceptableVTOs = 0;
-        const gapSeconds = 3000;
-        let reloadAfter = 25000;
-        
-        for (let i = 0; i < vets.length; i++) {
-            const vto = vets[i];
-            const matchedFilter = isVTOAcceptable(filters, vto);
-            if (!!matchedFilter) {
-                setTimeout(() => {
-                    acceptVTO(vto, () => {
-                        removeFilter('vetFilters', matchedFilter);
-                        vets = vets.filter(v => {
-                            if (JSON.stringify(v) === JSON.stringify(vto)) return false;
-                            return true;
-                        });
-                    });
-                }, acceptableVTOs * gapSeconds);
-                acceptableVTOs++;
+        const acceptVETs = (callBackOuter) => {
+            let vets = getVets();
+            console.log('Ready VETS', { vets });
+            let acceptableVETs = [];
+            for (let i = 0; i < vets.length; i++) {
+                const vet = vets[i];
+                const acceptableVET = isVTOAcceptable(filters, vet);
+                if (!!acceptableVET) {
+                    acceptableVETs.push(vet);
+                }
             }
-        }
-        const currentMins = new Date().getMinutes();
-        console.log(currentMins);
-        if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-            reloadAfter = 1000;
-        }
-        if (acceptableVTOs) {
-            reloadAfter = reloadAfter + acceptableVTOs * gapSeconds;
-        }
-        filters.length > 0 && console.log(`Accepted ${acceptableVTOs} VET(s), Reloading in: `, reloadAfter / 1000, 'Seconds');
 
-        filters.length > 0 && setTimeout(() => window.location.reload(), reloadAfter)
+            looper(acceptableVETs, (vet, callBack) => {
+                acceptVET(vet, () => {
+                    // removeFilter('vetFilters', acceptableFilter);
+                    // vets = vets.filter(v => {
+                    //     if (JSON.stringify(v) === JSON.stringify(vet)) return false;
+                    //     return true;
+                    // });
+                    callBack();
+                });
+            }, callBackOuter, 'AcceptVETSLooper', 0);
+        }
+        let secondsUsed = 0;
+        const timeRecorder = setInterval(()=>secondsUsed=secondsUsed+1, 1000);
+
+        looper(filters, (filter, callBack) => {
+            let date = filter.date.split(',')[0];
+            selectDay(date, () => {
+                acceptVETs(callBack)
+            });
+        }, () => {
+            let reloadDelay = 1000;
+            clearInterval(timeRecorder);
+            const currentMins = new Date().getMinutes();
+            console.log(currentMins);
+            if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
+                reloadDelay = 1000;
+            }
+            const reloadAfter = reloadDelay-secondsUsed<0?0:reloadDelay-secondsUsed;
+            console.log(`Reloading in ${reloadAfter/1000} seconds`);
+            setTimeout(()=>window.location.reload(), reloadAfter);
+        }, 'SelectDayLooper', 0)
+
+        // if (!filters.length) return;
+
+        // const currentMins = new Date().getMinutes();
+        // console.log(currentMins);
+        // if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
+        //     reloadAfter = 1000;
+        // }
+        // if (acceptableVTOs) {
+        //     reloadAfter = reloadAfter + acceptableVTOs * gapSeconds;
+        // }
+        // filters.length > 0 && console.log(`Accepted ${acceptableVTOs} VET(s), Reloading in: `, reloadAfter / 1000, 'Seconds');
+
+        // filters.length > 0 && setTimeout(() => window.location.reload(), reloadAfter);
     });
 
 }
+
+const loaded = () => {
+    const h1 = document.querySelector('h1[data-test-component="StencilH1"]');
+    if (!h1) return false;
+    const vtoSpinner = document.querySelector('svg[data-test-id="VtoLandingPage_Spinner"]');
+    if (!!vtoSpinner) {
+        return false;
+    };
+    console.log('LOADED')
+    return true;
+}
+
 console.clear();
 setUserInfo();
-setTimeout(main, 2000);
+const inverval = setInterval(() => {
+    if (loaded()) {
+        clearInterval(inverval);
+        main();
+    }
+}, 200);
+
+const sessionInterval = setInterval(() => {
+    const sessionModal = document.querySelector('div[aria-describedby="sr-session-expires-modal-message"]');
+    if (!sessionModal) return;
+    const styles = window.getComputedStyle(sessionModal);
+    if (styles.display !== 'none') {
+        const stayLoggedInButton = sessionModal.querySelector('#session-expires-modal-btn-stay-in');
+        stayLoggedInButton.click();
+        sessionModal.style.display = 'none';
+        console.log('modal is visible')
+    }
+}, 300);
