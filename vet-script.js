@@ -135,7 +135,7 @@ const main = () => {
                 acceptVETs(callBack)
             });
         }, () => {
-            // if (!filters.length) return;
+            if (!filters.length) return;
             let reloadDelay = 20000;
             clearInterval(timeRecorder);
             const currentMins = new Date().getMinutes();
