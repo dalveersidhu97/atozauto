@@ -42,7 +42,7 @@ const acceptVET = (vto, callBack) => {
         pressModalButton(/^yes, add shift$/i, ()=>{
             let counter = 1;
             const interval = setInterval(()=>{
-                if(counter<=5) {
+                if(counter>30) {
                     clearInterval(interval);
                     !!callBack && callBack();
                 }
@@ -55,7 +55,7 @@ const acceptVET = (vto, callBack) => {
                     !!callBack && callBack();
                 });
                 counter++;
-            }, 150);
+            }, 100);
         });
         // setTimeout(() => closeModal(callBack), 200);
     }, 0)
@@ -100,8 +100,8 @@ const looper = (arr, fn, whenDoneFn, loopName, delayTime, index) => {
     }
 }
 
-const main = () => {
-
+const main = (preference) => {
+    const refreshMode = preference.refreshMode; // Smart | Full Speed
     chrome.storage.local.get('vetFilters', function (result) {
         const filters = result.vetFilters || [];
         console.log('vetFilters', filters);
@@ -141,7 +141,7 @@ const main = () => {
             });
         }, () => {
             if (!filters.length) return;
-            let reloadDelay = 20000;
+            let reloadDelay = refreshMode === 'Smart'? 20000: 1000;
             clearInterval(timeRecorder);
             const currentMins = new Date().getMinutes();
             console.log(currentMins);
@@ -172,7 +172,10 @@ setUserInfo();
 const inverval = setInterval(() => {
     if (loaded()) {
         clearInterval(inverval);
-        main();
+        chrome.storage.local.get('preference', function (result) {
+            const preference = result.preference;
+            main(preference);
+        });
     }
 }, 100);
 

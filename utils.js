@@ -172,6 +172,42 @@ const refreshUserInfo = () => {
     });
 }
 
+const setRefreshMode = (mode) => {
+    chrome.storage.local.get(null, function (result) {
+        chrome.storage.local.set({ ...result, ['preference']: { refreshMode: mode } });
+        setTimeout(refreshRefreshMode, 500);
+    })
+}
+
+const refreshRefreshMode = () => {
+    console.log('refreshRefreshMode')
+    chrome.storage.local.get(null, function (result) {
+        const preference = result.preference || {};
+        const refreshMode = preference.refreshMode;
+        if (!refreshMode) {
+            setRefreshMode('Smart');
+            return;
+        }
+        console.log(refreshMode);
+        if (refreshMode === "Smart") {
+            document.getElementById("Smart").checked = true;
+        } else if (refreshMode === "Full Speed") {
+            document.getElementById("Full Speed").checked = true;
+        }
+    });
+}
+const addRefreshModeChangeListeners = () => {
+    var radioButtons = document.querySelectorAll('input[name="refreshMode"]');
+    radioButtons.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            if (this.checked) {
+                setRefreshMode(this.value);
+            }
+        });
+    });
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     refreshUserInfo();
 });
