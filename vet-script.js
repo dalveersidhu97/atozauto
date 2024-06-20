@@ -60,13 +60,18 @@ const acceptVET = (vto, callBack) => {
         // setTimeout(() => closeModal(callBack), 200);
     }, 0)
 }
+
 const selectDay = (date, callback) => {
     const daySelector = document.querySelector('div[data-test-id="day-selector"]');
-    if (!daySelector) return;
+    if (!daySelector) {
+        console.log('No day Selector')
+        return;
+    }
     const tabList = daySelector.querySelector('div[role="tablist"]');
     const cards = tabList.querySelectorAll('div[role="tab"]');
     cards.forEach(card => {
-        if (card.innerText.includes(date)) {
+        const cardText = card.innerText;
+        if (date.split(' ').every(part=>cardText.includes(part))) {
             card.click();
             setTimeout(callback, 0);
         }
