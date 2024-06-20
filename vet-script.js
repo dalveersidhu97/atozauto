@@ -42,7 +42,7 @@ const acceptVET = (vto, callBack) => {
         pressModalButton(/^yes, add shift$/i, ()=>{
             let counter = 1;
             const interval = setInterval(()=>{
-                if(counter>30) {
+                if(counter>60) {
                     clearInterval(interval);
                     !!callBack && callBack();
                 }
