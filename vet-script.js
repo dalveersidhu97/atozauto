@@ -14,6 +14,7 @@ const getVets = () => {
             const heading = listItem.querySelector('div[role="heading"]');
             const button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]');
             // const button = listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]');
+            // const button = listItem.querySelector('button[data-testid="ViewDetailsButton"]');
             if (button) {
                 const timeStr = heading.innerText.split(' ')[0];
                 const startTimeStr = timeStr.split('-')[0];
@@ -35,29 +36,33 @@ const getVets = () => {
     return vets;
 }
 
-const acceptVET = (vto, callBack) => {
-    console.log('Click VET Button', vto);
-    vto.button.click();
+const acceptVET = (vet, callBack) => {
+    console.log('Click VET Button', vet);
+    vet.button.click();
     setTimeout(() => {
-        pressModalButton(/^yes, add shift$/i, ()=>{
+        const btnFound = pressModalButton(/^yes, add shift$/i, ()=>{
             let counter = 1;
             const interval = setInterval(()=>{
                 if(counter>60) {
                     clearInterval(interval);
-                    !!callBack && callBack();
+                    closeModal(callBack);
                 }
                 pressModalButtonTemp(/^done$/i, ()=>{
                     clearInterval(interval);
-                    !!callBack && callBack();
+                    callBack();
                 });
                 pressModalButtonTemp(/^ok$/i, ()=>{
                     clearInterval(interval);
-                    !!callBack && callBack();
+                    callBack();
                 });
                 counter++;
             }, 100);
         });
-        // setTimeout(() => closeModal(callBack), 200);
+        if (!btnFound) {
+            setTimeout(() => closeModal(callBack), 500);
+        }
+        
+        // setTimeout(() => closeModal(callBack), 1000);
     }, 0)
 }
 
@@ -73,7 +78,7 @@ const selectDay = (date, callback) => {
         const cardText = card.innerText;
         if (date.split(' ').every(part=>cardText.includes(part))) {
             card.click();
-            setTimeout(callback, 0);
+            setTimeout(callback, 500);
         }
     })
 }
@@ -89,14 +94,14 @@ const looper = (arr, fn, whenDoneFn, loopName, delayTime, index) => {
                 loopName && console.log(loopName, ': Next');
                 looper(arr, fn, whenDoneFn, loopName, delay, i + 1);
             }else {
-                whenDoneFn()
+                whenDoneFn();
                 loopName && console.log(loopName, ': Done')
             };
         });
-        setTimeout(fnToCall, delay);
+        setTimeout(fnToCall, i===0?0:delay);
     }else {
-        whenDoneFn()
-        loopName && console.log(loopName, ': END')
+        whenDoneFn();
+        loopName && console.log(loopName, ': End')
     }
 }
 
@@ -117,7 +122,7 @@ const main = (preference) => {
                     acceptables.push({vet, filter: acceptableFilter});
                 }
             }
-
+            console.log('Acceptable VETS', { acceptables });
             looper(acceptables, (acceptable, callBack) => {
                 const vet = acceptable.vet;
                 const filter = acceptable.filter;
@@ -129,7 +134,7 @@ const main = (preference) => {
                     });
                     callBack();
                 });
-            }, callBackOuter, 'AcceptVETSLooper', 0);
+            }, callBackOuter, 'AcceptVETSLooper', 500);
         }
         let secondsUsed = 0;
         const timeRecorder = setInterval(()=>secondsUsed=secondsUsed+1000, 1000);
@@ -140,7 +145,7 @@ const main = (preference) => {
                 acceptVETs(callBack)
             });
         }, () => {
-            if (!filters.length) return;
+            if (!filters.length || refreshMode==="Off") return;
             let reloadDelay = refreshMode === 'Smart'? 20000: 1000;
             clearInterval(timeRecorder);
             const currentMins = new Date().getMinutes();

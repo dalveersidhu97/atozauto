@@ -193,6 +193,8 @@ const refreshRefreshMode = () => {
             document.getElementById("Smart").checked = true;
         } else if (refreshMode === "Full Speed") {
             document.getElementById("Full Speed").checked = true;
+        } else if (refreshMode === "Off") {
+            document.getElementById("Off").checked = true;
         }
     });
 }

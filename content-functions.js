@@ -135,33 +135,43 @@ const pressModalButton = (regex, callBack) => {
     }
     button.click();
     callBack && callBack();
+    return true;
 }
 const pressModalButtonTemp = (regex, callBack) => {
-    const modal = document.querySelector('div[role="dialog"]');
-    if (!modal) {
-        console.log('No modal');
-        return false;
-    }
-    const button = contains(modal, 'button', regex);
-    if (!button) {
-        console.log('No button', regex);
-        return false;
-    }
-    button.click();
-    callBack && callBack();
+    const modals = document.querySelectorAll('div[role="dialog"]');
+    let btnFound = false;
+    modals.forEach(modal=> {
+        if (!modal) {
+            console.log('No modal');
+        }else {
+            const button = contains(modal, 'button', regex);
+            if (!button) {
+                console.log('No button', regex);
+            }else {
+                button.click();
+                callBack && callBack();
+                btnFound = true;
+            }
+        }
+    });
+    return btnFound;
 }
 
 const closeModal = (callBack) => {
-    const modal = document.querySelector('div[data-test-component="StencilModal"]'); // try role="dialog"
-    if (!modal) {
-        console.log('No modal');
-        callBack && callBack();
-    }
-    const button = contains(modal, 'button[data-test-component="ModalCloseButton"]', '');
-    if (!button) {
-        console.log('No button');
-        callBack && callBack();
-    }
-    button.click();
-    callBack && callBack();
+    const modals = document.querySelectorAll('div[role="dialog"]'); // try role="dialog"
+    modals.forEach(modal => {
+        if (!modal) {
+            console.log('No modal');
+        }else {
+            console.log({ modal })
+            const button = contains(modal, 'button[data-test-component="ModalCloseButton"]', '');
+            if (!button) {
+                console.log('No button');
+            }else {
+                button.click();
+                callBack && callBack();
+            }
+        } 
+    })
+    
 }
