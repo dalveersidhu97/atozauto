@@ -3,12 +3,13 @@ const convertTimeToMins = (timeStr) => {
     const calcMins = (hours, mins) => {
         return hours * 60 + mins;
     }
-    if (timeStr.endsWith('a.m.')) {
-        const units = timeStr.replace('a.m.', '').split(':');
+    if (timeStr.endsWith('a.m.') || timeStr.endsWith('am')) {
+        const units = timeStr.replace('a.m.', '').replace('am', '').split(':');
         time = calcMins(+units[0], +units[1]);
-    } else if (timeStr.endsWith('p.m.')) {
-        const units = timeStr.replace('p.m.', '').split(':');
+    } else if (timeStr.endsWith('p.m.') || timeStr.endsWith('pm')) {
+        const units = timeStr.replace('p.m.', '').replace('pm', '').split(':');
         time = 720 + calcMins(+units[0], +units[1]);
+        console.log({timeStr, time})
     }
     return time;
 }

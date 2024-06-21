@@ -6,6 +6,7 @@ const getVets = () => {
     const listHeader = presentation0.querySelector('div[data-test-id="ClaimedShiftsColHeader"]');
     const listHeaderText = listHeader.innerText;
     const dateStr = extractDateFromVetHeader(listHeaderText);
+    console.log('DATE: ', dateStr);
 
     presentations.forEach(presentation => {
         const items = presentation.querySelectorAll('div[role="listitem"]')
@@ -78,27 +79,28 @@ const selectDay = (date, callback) => {
         const cardText = card.innerText;
         if (date.split(' ').every(part=>cardText.includes(part))) {
             card.click();
-            setTimeout(callback, 500);
+            setTimeout(callback, 0);
         }
     })
 }
 
-const looper = (arr, fn, whenDoneFn, loopName, delayTime, index) => {
+const looper = (arr, fn, whenDoneFn, loopName, delayTime, initialDelay, index) => {
     console.log(loopName, ': Entering', (index||0)+1, '/', arr.length);
     let i = index || 0;
     let delay = delayTime || 0;
+    let intialDel = initialDelay || 0;
     if (arr.length > i){
         console.log(loopName, ': Starting');
         const fnToCall = ()=>fn(arr[i], () => {
             if (arr.length - 1 > i) {
                 loopName && console.log(loopName, ': Next');
-                looper(arr, fn, whenDoneFn, loopName, delay, i + 1);
+                looper(arr, fn, whenDoneFn, loopName, delay, initialDelay, i + 1);
             }else {
                 whenDoneFn();
                 loopName && console.log(loopName, ': Done')
             };
         });
-        setTimeout(fnToCall, i===0?0:delay);
+        setTimeout(fnToCall, (i===0?0:delay )+(i===0?intialDel:0));
     }else {
         whenDoneFn();
         loopName && console.log(loopName, ': End')
@@ -134,7 +136,7 @@ const main = (preference) => {
                     });
                     callBack();
                 });
-            }, callBackOuter, 'AcceptVETSLooper', 500);
+            }, callBackOuter, 'AcceptVETSLooper', 200);
         }
         let secondsUsed = 0;
         const timeRecorder = setInterval(()=>secondsUsed=secondsUsed+1000, 1000);
