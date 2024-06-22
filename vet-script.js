@@ -148,12 +148,12 @@ const main = (preference) => {
             });
         }, () => {
             if (!filters.length || refreshMode==="Off") return;
-            let reloadDelay = refreshMode === 'Smart'? 20000: 1000;
+            let reloadDelay = refreshMode === 'Smart'? 20000: 0;
             clearInterval(timeRecorder);
             const currentMins = new Date().getMinutes();
             console.log(currentMins);
             if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-                reloadDelay = 1000;
+                reloadDelay = refreshMode === 'Smart'? 1000 : 0;
             }
             const reloadAfter = reloadDelay-secondsUsed<0?0:reloadDelay-secondsUsed;
             console.log(`Reloading in ${reloadAfter/1000} seconds`);
