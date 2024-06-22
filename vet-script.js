@@ -107,11 +107,17 @@ const looper = (arr, fn, whenDoneFn, loopName, delayTime, initialDelay, index) =
     }
 }
 
+const removeDuplicates = (arr = []) => {
+    return arr.filter((item, index)=>arr.indexOf(item)===index);
+}
+
 const main = (preference) => {
     const refreshMode = preference.refreshMode; // Smart | Full Speed
     chrome.storage.local.get('vetFilters', function (result) {
         const filters = result.vetFilters || [];
+        const allFilterDates = filters.map(filter=>filter.date.split(',')[0])
         console.log('vetFilters', filters);
+        const uniqueFilterDates = removeDuplicates(allFilterDates);
 
         const acceptVETs = (callBackOuter) => {
             let vets = getVets();
@@ -141,8 +147,7 @@ const main = (preference) => {
         let secondsUsed = 0;
         const timeRecorder = setInterval(()=>secondsUsed=secondsUsed+1000, 1000);
 
-        looper(filters, (filter, callBack) => {
-            let date = filter.date.split(',')[0];
+        looper(uniqueFilterDates, (date, callBack) => {
             selectDay(date, () => {
                 acceptVETs(callBack)
             });
