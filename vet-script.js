@@ -14,8 +14,7 @@ const getVets = () => {
         items.forEach(listItem => {
             const heading = listItem.querySelector('div[role="heading"]');
             const button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]');
-            // const button = listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]');
-            // const button = listItem.querySelector('button[data-testid="ViewDetailsButton"]');
+            // const button = listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]') || listItem.querySelector('button[data-testid="ViewDetailsButton"]');
             if (button) {
                 const timeStr = heading.innerText.split(' ')[0];
                 const startTimeStr = timeStr.split('-')[0];
@@ -41,18 +40,18 @@ const acceptVET = (vet, callBack) => {
     console.log('Click VET Button', vet);
     vet.button.click();
     setTimeout(() => {
-        const btnFound = pressModalButton(/^yes, add shift$/i, ()=>{
+        const btnFound = pressModalButton(/^yes, add shift$/i, () => {
             let counter = 1;
-            const interval = setInterval(()=>{
-                if(counter>60) {
+            const interval = setInterval(() => {
+                if (counter > 60) {
                     clearInterval(interval);
                     closeModal(callBack);
                 }
-                pressModalButtonTemp(/^done$/i, ()=>{
+                pressModalButtonTemp(/^done$/i, () => {
                     clearInterval(interval);
                     callBack();
                 });
-                pressModalButtonTemp(/^ok$/i, ()=>{
+                pressModalButtonTemp(/^ok$/i, () => {
                     clearInterval(interval);
                     callBack();
                 });
@@ -62,7 +61,7 @@ const acceptVET = (vet, callBack) => {
         if (!btnFound) {
             setTimeout(() => closeModal(callBack), 500);
         }
-        
+
         // setTimeout(() => closeModal(callBack), 1000);
     }, 0)
 }
@@ -77,7 +76,7 @@ const selectDay = (date, callback) => {
     const cards = tabList.querySelectorAll('div[role="tab"]');
     cards.forEach(card => {
         const cardText = card.innerText;
-        if (date.split(' ').every(part=>cardText.includes(part))) {
+        if (date.split(' ').every(part => cardText.includes(part))) {
             card.click();
             setTimeout(callback, 0);
         }
@@ -85,37 +84,42 @@ const selectDay = (date, callback) => {
 }
 
 const looper = (arr, fn, whenDoneFn, loopName, delayTime, initialDelay, index) => {
-    console.log(loopName, ': Entering', (index||0)+1, '/', arr.length);
+    console.log(loopName, ': Entering', (index || 0) + 1, '/', arr.length);
     let i = index || 0;
     let delay = delayTime || 0;
     let intialDel = initialDelay || 0;
-    if (arr.length > i){
+    if (arr.length > i) {
         console.log(loopName, ': Starting');
-        const fnToCall = ()=>fn(arr[i], () => {
+        const fnToCall = () => fn(arr[i], () => {
             if (arr.length - 1 > i) {
                 loopName && console.log(loopName, ': Next');
                 looper(arr, fn, whenDoneFn, loopName, delay, initialDelay, i + 1);
-            }else {
+            } else {
                 whenDoneFn();
                 loopName && console.log(loopName, ': Done')
             };
         });
-        setTimeout(fnToCall, (i===0?0:delay )+(i===0?intialDel:0));
-    }else {
+        setTimeout(fnToCall, (i === 0 ? 0 : delay) + (i === 0 ? intialDel : 0));
+    } else {
         whenDoneFn();
         loopName && console.log(loopName, ': End')
     }
 }
 
 const removeDuplicates = (arr = []) => {
-    return arr.filter((item, index)=>arr.indexOf(item)===index);
+    return arr.filter((item, index) => arr.indexOf(item) === index);
+}
+
+const getArryObjectIndex = (obj, arr) => {
+    const arrStr = arr.map(f => JSON.stringify(f));
+    return arrStr.indexOf(JSON.stringify(obj))
 }
 
 const main = (preference) => {
     const refreshMode = preference.refreshMode; // Smart | Full Speed
     chrome.storage.local.get('vetFilters', function (result) {
         const filters = result.vetFilters || [];
-        const allFilterDates = filters.map(filter=>filter.date.split(',')[0])
+        const allFilterDates = filters.map(filter => filter.date.split(',')[0])
         console.log('vetFilters', filters);
         const uniqueFilterDates = removeDuplicates(allFilterDates);
 
@@ -127,11 +131,23 @@ const main = (preference) => {
                 const vet = vets[i];
                 const acceptableFilter = isVTOAcceptable(filters, vet);
                 if (!!acceptableFilter) {
-                    acceptables.push({vet, filter: acceptableFilter});
+                    acceptables.push({ vet, filter: acceptableFilter });
                 }
             }
             console.log('Acceptable VETS', { acceptables });
-            looper(acceptables, (acceptable, callBack) => {
+
+            function compare(a, b) {
+                if (getArryObjectIndex(a.filter, filters) < getArryObjectIndex(b.filter, filters))
+                    return -1;
+                if (getArryObjectIndex(a.filter, filters) > getArryObjectIndex(b.filter, filters))
+                    return 1;
+                return 0;
+            }
+
+            const acceptablesSortedAsFilters = acceptables.sort(compare);
+            console.log('Acceptable Sorted As Filters VETS', { acceptablesSortedAsFilters });
+
+            looper(acceptablesSortedAsFilters, (acceptable, callBack) => {
                 const vet = acceptable.vet;
                 const filter = acceptable.filter;
                 acceptVET(vet, () => {
@@ -145,24 +161,24 @@ const main = (preference) => {
             }, callBackOuter, 'AcceptVETSLooper', 200);
         }
         let secondsUsed = 0;
-        const timeRecorder = setInterval(()=>secondsUsed=secondsUsed+1000, 1000);
+        const timeRecorder = setInterval(() => secondsUsed = secondsUsed + 1000, 1000);
 
         looper(uniqueFilterDates, (date, callBack) => {
             selectDay(date, () => {
                 acceptVETs(callBack)
             });
         }, () => {
-            if (!filters.length || refreshMode==="Off") return;
-            let reloadDelay = refreshMode === 'Smart'? 20000: 0;
+            if (!filters.length || refreshMode === "Off") return;
+            let reloadDelay = refreshMode === 'Smart' ? 20000 : 0;
             clearInterval(timeRecorder);
             const currentMins = new Date().getMinutes();
             console.log(currentMins);
             if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-                reloadDelay = refreshMode === 'Smart'? 1000 : 0;
+                reloadDelay = refreshMode === 'Smart' ? 1000 : 0;
             }
-            const reloadAfter = reloadDelay-secondsUsed<0?0:reloadDelay-secondsUsed;
-            console.log(`Reloading in ${reloadAfter/1000} seconds`);
-            setTimeout(()=>window.location.reload(), reloadAfter);
+            const reloadAfter = reloadDelay - secondsUsed < 0 ? 0 : reloadDelay - secondsUsed;
+            console.log(`Reloading in ${reloadAfter / 1000} seconds`);
+            setTimeout(() => window.location.reload(), reloadAfter);
         }, 'SelectDayLooper', 0)
     });
 

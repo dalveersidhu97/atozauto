@@ -15,12 +15,12 @@ const convertTimeToMins = (timeStr) => {
     const calcMins = (hours, mins) => {
         return hours * 60 + mins;
     }
-    if (timeStr.endsWith('a.m.')) {
-        const units = timeStr.replace('a.m.', '').split(':');
+    if (timeStr.endsWith('a.m.') || timeStr.endsWith('am')) {
+        const units = timeStr.replace('a.m.', '').replace('am', '').split(':');
         const h = +units[0]===12?0:+units[0];
         time = calcMins(h, +units[1]);
-    } else if (timeStr.endsWith('p.m.')) {
-        const units = timeStr.replace('p.m.', '').split(':');
+    } else if (timeStr.endsWith('p.m.') || timeStr.endsWith('pm')) {
+        const units = timeStr.replace('p.m.', '').replace('pm', '').split(':');
         const h = +units[0]===12?0:+units[0];
         time = 720 + calcMins(h, +units[1]);
     }
@@ -47,7 +47,9 @@ function intToTime(intTime) {
     minutes = minutes < 10 ? '0' + minutes : minutes; // Add leading zero if minutes < 10
     return hours + ':' + minutes + ampm;
 }
-function intToString(intTime) {
+function intToString(time) {
+    let intTime = time;
+    if (intTime<0) intTime = 24*60+intTime;
     let minutes = intTime % 60;
     let hours = (intTime - minutes) / 60;
     return `${hours} hours ${minutes} minutes`

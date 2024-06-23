@@ -5,11 +5,12 @@ const convertTimeToMins = (timeStr) => {
     }
     if (timeStr.endsWith('a.m.') || timeStr.endsWith('am')) {
         const units = timeStr.replace('a.m.', '').replace('am', '').split(':');
-        time = calcMins(+units[0], +units[1]);
+        const h = +units[0]===12?0:+units[0];
+        time = calcMins(h, +units[1]);
     } else if (timeStr.endsWith('p.m.') || timeStr.endsWith('pm')) {
         const units = timeStr.replace('p.m.', '').replace('pm', '').split(':');
-        time = 720 + calcMins(+units[0], +units[1]);
-        console.log({timeStr, time})
+        const h = +units[0]===12?0:+units[0];
+        time = 720 + calcMins(h, +units[1]);
     }
     return time;
 }
