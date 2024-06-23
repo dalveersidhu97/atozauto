@@ -19,13 +19,14 @@ const getVets = () => {
                 const timeStr = heading.innerText.split(' ')[0];
                 const startTimeStr = timeStr.split('-')[0];
                 const endTimeStr = timeStr.split('-')[1];
+                const startTime = convertTimeToMins(startTimeStr);
                 const vet = {
                     button,
                     startTimeStr,
                     endTimeStr,
                     date: dateStr,
-                    startTime: convertTimeToMins(startTimeStr),
-                    endTime: convertTimeToMins(endTimeStr)
+                    startTime,
+                    endTime: convertTimeToMins(endTimeStr, startTime)
                 }
                 console.log(vet);
                 vets.push(vet);

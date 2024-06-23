@@ -1,4 +1,4 @@
-const convertTimeToMins = (timeStr) => {
+const convertTimeToMins = (timeStr, startTimeInt) => {
     let time = 0;
     const calcMins = (hours, mins) => {
         return hours * 60 + mins;
@@ -12,6 +12,8 @@ const convertTimeToMins = (timeStr) => {
         const h = +units[0]===12?0:+units[0];
         time = 720 + calcMins(h, +units[1]);
     }
+    if (!!startTimeInt && time-startTimeInt<0)
+        time = time + 24*60;
     return time;
 }
 
