@@ -1,5 +1,5 @@
 
-const getVets = ({isTestMode}) => {
+const getVets = ({ isTestMode }) => {
     const vets = [];
     const presentations = document.querySelectorAll('div[role="presentation"]');
     const presentation0 = presentations[0];
@@ -13,10 +13,10 @@ const getVets = ({isTestMode}) => {
         console.log(items.length);
         items.forEach(listItem => {
             const heading = listItem.querySelector('div[role="heading"]');
-            let button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]') ;
+            let button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]');
             if (isTestMode)
-                button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]') 
-                    || listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]') 
+                button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]')
+                    || listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]')
                     || listItem.querySelector('button[data-testid="ViewDetailsButton"]');
             if (button) {
                 const timeStr = heading.innerText.split(' ')[0];
@@ -72,21 +72,26 @@ const acceptVET = (vet, isTestMode, callBack) => {
     }, 0)
 }
 
-const selectDay = (date, callback) => {
+const selectDay = (inputDate, callback) => {
+    const parts = inputDate.split(' ');
+    const date = parts[0] + ' ' + parseInt(parts[1], 10).toString(); // converting Jul 01 to Jul 1
     const daySelector = document.querySelector('div[data-test-id="day-selector"]');
     if (!daySelector) {
         console.log('No day Selector')
         return;
     }
     const tabList = daySelector.querySelector('div[role="tablist"]');
-    const cards = tabList.querySelectorAll('div[role="tab"]');
-    cards.forEach(card => {
-        const cardText = card.innerText;
-        if (date.split(' ').every(part => cardText.includes(part))) {
-            card.click();
-            setTimeout(callback, 0);
-        }
-    })
+    let cardFound = false;
+    const labelQuery = `div[aria-label*="${date.replace(' ', '  ')}"]`;
+    const card = daySelector.querySelector(labelQuery);
+    tabList.scrollLeft = card.offsetLeft - tabList.offsetLeft;
+    if (!!card) {
+        card.click();
+        setTimeout(callback, 0);
+        cardFound = true;
+        console.log('Selected Date: ', date)
+    }
+    if (!cardFound) console.log('Day Tab not found for ', date);
 }
 
 const looper = (arr, fn, whenDoneFn, loopName, delayTime, initialDelay, index) => {
@@ -123,7 +128,7 @@ const getArryObjectIndex = (obj, arr) => {
 
 const main = (preference) => {
     const refreshMode = preference.refreshMode; // Smart | Full Speed
-    const isTestMode = preference.testMode==='On'; // On | Off
+    const isTestMode = preference.testMode === 'On'; // On | Off
     chrome.storage.local.get('vetFilters', function (result) {
         const filters = result.vetFilters || [];
         const allFilterDates = filters.map(filter => filter.date.split(',')[0])
@@ -131,7 +136,7 @@ const main = (preference) => {
         const uniqueFilterDates = removeDuplicates(allFilterDates);
 
         const acceptVETs = (callBackOuter) => {
-            let vets = getVets({isTestMode});
+            let vets = getVets({ isTestMode });
             console.log('Ready VETS', { vets });
             let acceptables = [];
             for (let i = 0; i < vets.length; i++) {
@@ -186,7 +191,7 @@ const main = (preference) => {
             const reloadAfter = reloadDelay - secondsUsed < 0 ? 0 : reloadDelay - secondsUsed;
             console.log(`Reloading in ${reloadAfter / 1000} seconds`);
             setTimeout(() => window.location.reload(), reloadAfter);
-        }, 'SelectDayLooper', 0)
+        }, 'SelectDayLooper', 0, 0)
     });
 
 }
