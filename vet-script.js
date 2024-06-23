@@ -84,7 +84,8 @@ const selectDay = (inputDate, callback) => {
     let cardFound = false;
     const labelQuery = `div[aria-label*="${date.replace(' ', '  ')}"]`;
     const card = daySelector.querySelector(labelQuery);
-    tabList.scrollLeft = card.offsetLeft - tabList.offsetLeft;
+    // tabList.scrollLeft = card.offsetLeft - tabList.offsetLeft;
+    tabList.scroll({ left: card.offsetLeft - tabList.offsetLeft, behavior: 'smooth' });
     if (!!card) {
         card.click();
         setTimeout(callback, 0);
