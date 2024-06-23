@@ -17,10 +17,12 @@ const convertTimeToMins = (timeStr) => {
     }
     if (timeStr.endsWith('a.m.')) {
         const units = timeStr.replace('a.m.', '').split(':');
-        time = calcMins(+units[0], +units[1]);
+        const h = +units[0]===12?0:+units[0];
+        time = calcMins(h, +units[1]);
     } else if (timeStr.endsWith('p.m.')) {
         const units = timeStr.replace('p.m.', '').split(':');
-        time = 720 + calcMins(+units[0], +units[1]);
+        const h = +units[0]===12?0:+units[0];
+        time = 720 + calcMins(h, +units[1]);
     }
     return time;
 }
@@ -28,7 +30,9 @@ const convertTimeToMins = (timeStr) => {
 function formatTime(date) {
     let hours = date.getHours();
     let minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
+    // const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
+    const timeString = date.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+    const ampm = timeString.split(' ')[1].split('').join('.').toLowerCase()+'.';
     hours = hours % 12;
     hours = hours ? hours : 12; // Handle midnight (0 hours)
     minutes = minutes < 10 ? '0' + minutes : minutes; // Add leading zero if minutes < 10
