@@ -9,8 +9,8 @@ const main = () => {
     });
 
     refreshFilters('vetFilters');
-    addRefreshModeChangeListeners();
-    refreshRefreshMode();
+    addPrefrenceListeners();
+    refreshPrefrence();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

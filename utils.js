@@ -17,15 +17,15 @@ const convertTimeToMins = (timeStr, startTimeInt) => {
     }
     if (timeStr.endsWith('a.m.') || timeStr.endsWith('am')) {
         const units = timeStr.replace('a.m.', '').replace('am', '').split(':');
-        const h = +units[0]===12?0:+units[0];
+        const h = +units[0] === 12 ? 0 : +units[0];
         time = calcMins(h, +units[1]);
     } else if (timeStr.endsWith('p.m.') || timeStr.endsWith('pm')) {
         const units = timeStr.replace('p.m.', '').replace('pm', '').split(':');
-        const h = +units[0]===12?0:+units[0];
+        const h = +units[0] === 12 ? 0 : +units[0];
         time = 720 + calcMins(h, +units[1]);
     }
-    if (!!startTimeInt && time-startTimeInt<0)
-        time = time + 24*60;
+    if (!!startTimeInt && time - startTimeInt < 0)
+        time = time + 24 * 60;
     return time;
 }
 
@@ -34,7 +34,7 @@ function formatTime(date) {
     let minutes = date.getMinutes();
     // const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
     const timeString = date.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
-    const ampm = timeString.split(' ')[1].split('').join('.').toLowerCase()+'.';
+    const ampm = timeString.split(' ')[1].split('').join('.').toLowerCase() + '.';
     hours = hours % 12;
     hours = hours ? hours : 12; // Handle midnight (0 hours)
     minutes = minutes < 10 ? '0' + minutes : minutes; // Add leading zero if minutes < 10
@@ -51,7 +51,7 @@ function intToTime(intTime) {
 }
 function intToString(time) {
     let intTime = time;
-    if (intTime<0) intTime = 24*60+intTime;
+    if (intTime < 0) intTime = 24 * 60 + intTime;
     let minutes = intTime % 60;
     let hours = (intTime - minutes) / 60;
     return `${hours} hours ${minutes} minutes`
@@ -180,23 +180,32 @@ const refreshUserInfo = () => {
     });
 }
 
-const setRefreshMode = (mode) => {
+const initPrefrence = (callBack) => {
+    console.log('initPrefrence')
     chrome.storage.local.get(null, function (result) {
-        chrome.storage.local.set({ ...result, ['preference']: { refreshMode: mode } });
-        setTimeout(refreshRefreshMode, 500);
+        if(!result.preference)
+            chrome.storage.local.set({ ...result, ['preference']: { refreshMode: 'Smart', testMode: 'Off' } });
+        !!callBack && setTimeout(callBack, 500);
     })
 }
 
-const refreshRefreshMode = () => {
-    console.log('refreshRefreshMode')
+const setPreference = (key, value, callBack) => {
     chrome.storage.local.get(null, function (result) {
+        chrome.storage.local.set({ ...result, ['preference']: { ...(result.preference || {}), [key]: value } });
+        !!callBack && setTimeout(callBack, 500);
+    })
+}
+
+const refreshPrefrence = () => {
+    console.log('refreshPrefrence')
+    chrome.storage.local.get(null, function (result) {
+        if(!result.preference)
+            return initPrefrence(refreshPrefrence);
         const preference = result.preference || {};
         const refreshMode = preference.refreshMode;
-        if (!refreshMode) {
-            setRefreshMode('Smart');
-            return;
-        }
-        console.log(refreshMode);
+        const testMode = preference.testMode;
+        console.log(preference);
+
         if (refreshMode === "Smart") {
             document.getElementById("Smart").checked = true;
         } else if (refreshMode === "Full Speed") {
@@ -204,14 +213,28 @@ const refreshRefreshMode = () => {
         } else if (refreshMode === "Off") {
             document.getElementById("Off").checked = true;
         }
+        if (testMode === "On") {
+            document.getElementById("testModeOn").checked = true;
+        } else if (testMode === "Off") {
+            document.getElementById("testModeOff").checked = true;
+        }
     });
 }
-const addRefreshModeChangeListeners = () => {
-    var radioButtons = document.querySelectorAll('input[name="refreshMode"]');
-    radioButtons.forEach(function (radio) {
+
+const addPrefrenceListeners = () => {
+    const refreshRadioButtons = document.querySelectorAll('input[name="refreshMode"]');
+    refreshRadioButtons.forEach(function (radio) {
         radio.addEventListener("change", function () {
             if (this.checked) {
-                setRefreshMode(this.value);
+                setPreference('refreshMode', this.value, refreshPrefrence);
+            }
+        });
+    });
+    const testModeRadioButtons = document.querySelectorAll('input[name="testMode"]');
+    testModeRadioButtons.forEach(function (radio) {
+        radio.addEventListener("change", function () {
+            if (this.checked) {
+                setPreference('testMode', this.value, refreshPrefrence);
             }
         });
     });

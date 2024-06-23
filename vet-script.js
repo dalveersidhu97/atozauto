@@ -1,5 +1,5 @@
 
-const getVets = () => {
+const getVets = ({isTestMode}) => {
     const vets = [];
     const presentations = document.querySelectorAll('div[role="presentation"]');
     const presentation0 = presentations[0];
@@ -13,8 +13,11 @@ const getVets = () => {
         console.log(items.length);
         items.forEach(listItem => {
             const heading = listItem.querySelector('div[role="heading"]');
-            const button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]');
-            // const button = listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]') || listItem.querySelector('button[data-testid="ViewDetailsButton"]');
+            let button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]') ;
+            if (isTestMode)
+                button = listItem.querySelector('button[data-test-id="AddOpportunityModalButton"]') 
+                    || listItem.querySelector('button[data-testid="OpportunityDetailsModalButton"]') 
+                    || listItem.querySelector('button[data-testid="ViewDetailsButton"]');
             if (button) {
                 const timeStr = heading.innerText.split(' ')[0];
                 const startTimeStr = timeStr.split('-')[0];
@@ -37,9 +40,13 @@ const getVets = () => {
     return vets;
 }
 
-const acceptVET = (vet, callBack) => {
+const acceptVET = (vet, isTestMode, callBack) => {
     console.log('Click VET Button', vet);
     vet.button.click();
+    if (isTestMode) {
+        setTimeout(() => closeModal(callBack), 2000);
+        return;
+    }
     setTimeout(() => {
         const btnFound = pressModalButton(/^yes, add shift$/i, () => {
             let counter = 1;
@@ -62,8 +69,6 @@ const acceptVET = (vet, callBack) => {
         if (!btnFound) {
             setTimeout(() => closeModal(callBack), 500);
         }
-
-        // setTimeout(() => closeModal(callBack), 1000);
     }, 0)
 }
 
@@ -118,6 +123,7 @@ const getArryObjectIndex = (obj, arr) => {
 
 const main = (preference) => {
     const refreshMode = preference.refreshMode; // Smart | Full Speed
+    const isTestMode = preference.testMode==='On'; // On | Off
     chrome.storage.local.get('vetFilters', function (result) {
         const filters = result.vetFilters || [];
         const allFilterDates = filters.map(filter => filter.date.split(',')[0])
@@ -125,7 +131,7 @@ const main = (preference) => {
         const uniqueFilterDates = removeDuplicates(allFilterDates);
 
         const acceptVETs = (callBackOuter) => {
-            let vets = getVets();
+            let vets = getVets({isTestMode});
             console.log('Ready VETS', { vets });
             let acceptables = [];
             for (let i = 0; i < vets.length; i++) {
@@ -151,8 +157,8 @@ const main = (preference) => {
             looper(acceptablesSortedAsFilters, (acceptable, callBack) => {
                 const vet = acceptable.vet;
                 const filter = acceptable.filter;
-                acceptVET(vet, () => {
-                    removeFilter('vetFilters', filter);
+                acceptVET(vet, isTestMode, () => {
+                    !isTestMode && removeFilter('vetFilters', filter);
                     vets = vets.filter(v => {
                         if (JSON.stringify(v) === JSON.stringify(vet)) return false;
                         return true;
