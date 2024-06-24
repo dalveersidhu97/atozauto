@@ -5,16 +5,29 @@ const convertTimeToMins = (timeStr, startTimeInt) => {
     }
     if (timeStr.endsWith('a.m.') || timeStr.endsWith('am')) {
         const units = timeStr.replace('a.m.', '').replace('am', '').split(':');
-        const h = +units[0]===12?0:+units[0];
+        const h = +units[0] === 12 ? 0 : +units[0];
         time = calcMins(h, +units[1]);
     } else if (timeStr.endsWith('p.m.') || timeStr.endsWith('pm')) {
         const units = timeStr.replace('p.m.', '').replace('pm', '').split(':');
-        const h = +units[0]===12?0:+units[0];
+        const h = +units[0] === 12 ? 0 : +units[0];
         time = 720 + calcMins(h, +units[1]);
     }
-    if (!!startTimeInt && time-startTimeInt<0)
-        time = time + 24*60;
+    if (!!startTimeInt && time - startTimeInt < 0)
+        time = time + 24 * 60;
     return time;
+}
+
+const dateFormatter = (dateString) => { // format "2024-07-01"
+    const date = new Date(`${dateString}T12:00:00`);
+    const monthNames = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+    const monthIndex = date.getMonth(); // Returns a number from 0 to 11
+    const day = date.getDate();         // Returns a number from 1 to 31
+    const formattedDay = day < 10 ? `0${day}` : `${day}`;
+    const formattedDate = `${monthNames[monthIndex]} ${formattedDay}`;
+    return formattedDate; // Output example: "Jul 01"
 }
 
 function extractDateFromVetHeader(inputString) {
@@ -30,6 +43,7 @@ function extractDateFromVetHeader(inputString) {
 
 const getUserInfo = () => {
     const navbar = document.querySelector('#navbar-menu');
+    if(!navbar) return;
     const img = navbar.querySelector(`img[alt="User's avatar"]`);
     const name = img.parentElement.parentElement.innerText;
     console.log(name, img.getAttribute('src'));
@@ -144,14 +158,14 @@ const pressModalButton = (regex, callBack) => {
 const pressModalButtonTemp = (regex, callBack) => {
     const modals = document.querySelectorAll('div[role="dialog"]');
     let btnFound = false;
-    modals.forEach(modal=> {
+    modals.forEach(modal => {
         if (!modal) {
             console.log('No modal');
-        }else {
+        } else {
             const button = contains(modal, 'button', regex);
             if (!button) {
                 console.log('No button', regex);
-            }else {
+            } else {
                 button.click();
                 callBack && callBack();
                 btnFound = true;
@@ -166,16 +180,16 @@ const closeModal = (callBack) => {
     modals.forEach(modal => {
         if (!modal) {
             console.log('No modal');
-        }else {
+        } else {
             console.log({ modal })
             const button = contains(modal, 'button[data-test-component="ModalCloseButton"]', '');
             if (!button) {
                 console.log('No button');
-            }else {
+            } else {
                 button.click();
                 callBack && callBack();
             }
-        } 
+        }
     })
-    
+
 }
