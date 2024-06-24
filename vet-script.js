@@ -75,7 +75,7 @@ const waitForLoadingOver = (callBack) => {
     console.log('Waiting for vets Loading to Over.')
     let counter = 0;
     const intervalMillis = 500;
-    const maxWaitMillis = 15000;
+    const maxWaitMillis = 5000;
     const maxCounter = maxWaitMillis / intervalMillis;
     const interval = setInterval(() => {
         counter++;
@@ -294,6 +294,7 @@ const loaded = () => {
 }
 
 console.clear();
+setTimeout(()=>!!setUserInfo&&setUserInfo(), 100);
 setUserInfo();
 chrome.storage.local.get('preference', function (result) {
     const preference = result.preference || {};
