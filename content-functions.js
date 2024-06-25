@@ -71,13 +71,33 @@ const is = (val1, op, val2) => {
     return isValid;
 }
 
+const parseDate = (dateString) => { // jul 03
+    const parts = dateString.split(' ');
+    const month = parts[0].toLowerCase();
+    const day = +parts[1];
+    return { month, day }
+}
+const equalDateStrings = (dateString1, dateString2) => { // jul 03, Jul 3
+    const parsedDate1 = parseDate(dateString1);
+    const parsedDate2 = parseDate(dateString2);
+    if(parsedDate1.month.toLowerCase() === parsedDate2.month.toLowerCase() && parsedDate1.day === parsedDate1.day)
+        return true;;
+    return false;
+}
+
 const validateVTOFilter = (vto, filter) => {
     const userName = getUserInfo().name;
-    const vtoDate = vto.date.split(',')[0].toLowerCase();
-    const requiredDate = filter.date.split(',')[0].toLowerCase();
-    if (filter.forName.toLowerCase() !== userName.toLowerCase()) return false;
-    if (vtoDate !== requiredDate) return false;
-    console.log(vtoDate, '===', requiredDate);
+    const vtoDate = vto.date.split(',')[0];
+    const requiredDate = filter.date.split(',')[0];
+    
+    if (filter.forName.toLowerCase() !== userName.toLowerCase()) {
+        console.log('User name does not match')
+        return false;
+    }
+    
+    if (!equalDateStrings(vtoDate, requiredDate)) {
+        return false;
+    }
 
     const startTimeOp = Object.keys(filter.startTime)[0];
     const startTime = filter.startTime[startTimeOp];
@@ -93,7 +113,9 @@ const validateVTOFilter = (vto, filter) => {
 const isVTOAcceptable = (vtoFilters, vto) => {
     for (let i = 0; i < vtoFilters.length; i++) {
         const isFilterValid = validateVTOFilter(vto, vtoFilters[i]);
-        if (isFilterValid) return vtoFilters[i];
+        if (isFilterValid) {
+            return vtoFilters[i];
+        }
     }
     return false;
 }

@@ -153,7 +153,7 @@ const selectDay = (inputDate, callback, shouldWaitForLoading, shouldScroll, isTe
     shouldScroll && tabList.scroll({ left: card.offsetLeft - tabList.offsetLeft, behavior: 'smooth' });
     if (!!card) {
         card.click();
-        if (numAvailableShifts===0 && !isTestMode) 
+        if (numAvailableShifts === 0 && !isTestMode)
             setTimeout(callback, 10);
         else {
             shouldWaitForLoading && setTimeout(() => waitForLoadingOver(callback), 10);
@@ -197,86 +197,100 @@ const getArryObjectIndex = (obj, arr) => {
     return arrStr.indexOf(JSON.stringify(obj))
 }
 
+const sortArray = (acceptables, filters) => {
+    function compare(a, b) {
+        if (getArryObjectIndex(a.filter, filters) < getArryObjectIndex(b.filter, filters))
+            return -1;
+        if (getArryObjectIndex(a.filter, filters) > getArryObjectIndex(b.filter, filters))
+            return 1;
+        return 0;
+    }
+
+    return acceptables.sort(compare);
+}
+
+const acceptAllAcceptables = (filters, callBackOuter, { isTestMode }) => {
+    let vets = getVets({ isTestMode });
+    console.log('Ready VETS', { vets });
+    let acceptables = [];
+    for (let i = 0; i < vets.length; i++) {
+        const vet = vets[i];
+        const acceptableFilter = isVTOAcceptable(filters, vet);
+        if (!!acceptableFilter) {
+            acceptables.push({ vet, filter: acceptableFilter });
+        }
+    }
+    console.log('Acceptable VETS', { acceptables });
+    const acceptablesSortedAsFilters = sortArray(acceptables, filters);
+    console.log('Acceptable Sorted As Filters VETS', { acceptablesSortedAsFilters });
+
+    looper(acceptablesSortedAsFilters, (acceptable, callBack) => {
+        const vet = acceptable.vet;
+        const filter = acceptable.filter;
+        acceptVET(vet, isTestMode, () => {
+            !isTestMode && removeFilter('vetFilters', filter);
+            vets = vets.filter(v => {
+                if (JSON.stringify(v) === JSON.stringify(vet)) return false;
+                return true;
+            });
+            callBack();
+        });
+    }, callBackOuter, 'AcceptVETSLooper', 200);
+}
+
+const prepareSelectableFilterDates = (filters) => {
+    const allFilterDates = filters.map(filter => filter.date.split(',')[0])
+    const selectableDates = removeDuplicates(allFilterDates);
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlDate = urlParams.get('date');
+    let preSelectedDate = '';
+    let nextPreSelectedDate = selectableDates[0];
+    if (urlDate) {
+        preSelectedDate = dateFormatter(urlDate);
+        if (selectableDates.includes(preSelectedDate)) {
+            selectableDates.splice(selectableDates.indexOf(preSelectedDate), 1);
+            selectableDates.unshift(preSelectedDate);
+        }
+        console.log('Pre Selected Date is', preSelectedDate);
+    }
+    !!nextPreSelectedDate && selectableDates.push(nextPreSelectedDate);
+    return { selectableDates, preSelectedDate };
+}
+
+const finalCallBack = (filters, secondsUsed, preference) => {
+    const refreshMode = preference.refreshMode; // Smart | Full Speed
+    if (!filters.length || refreshMode === "Off") return;
+    let reloadDelay = refreshMode === 'Smart' ? 20000 : 0;
+    const currentMins = new Date().getMinutes();
+    console.log(currentMins);
+    if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
+        reloadDelay = refreshMode === 'Smart' ? 1000 : 0;
+    }
+    const reloadAfter = reloadDelay - secondsUsed < 0 ? 0 : reloadDelay - secondsUsed;
+    console.log(`Reloading in ${reloadAfter / 1000} seconds`);
+    setTimeout(() => window.location.reload(), reloadAfter);
+}
+
 const main = (preference) => {
     const refreshMode = preference.refreshMode; // Smart | Full Speed
     const isTestMode = preference.testMode === 'On'; // On | Off
     chrome.storage.local.get('vetFilters', function (result) {
         const filters = result.vetFilters || [];
-        const allFilterDates = filters.map(filter => filter.date.split(',')[0])
         console.log('vetFilters', filters);
-        const uniqueFilterDates = removeDuplicates(allFilterDates);
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlDate = urlParams.get('date');
-        let preSelectedDate = '';
-        let nextPreSelectedDate = uniqueFilterDates[0];
-        if (urlDate) {
-            preSelectedDate = dateFormatter(urlDate);
-            if (uniqueFilterDates.includes(preSelectedDate)) {
-                uniqueFilterDates.splice(uniqueFilterDates.indexOf(preSelectedDate), 1);
-                uniqueFilterDates.unshift(preSelectedDate);
-            }
-            console.log('Pre Selected Date is', preSelectedDate);
-        }
-        !!nextPreSelectedDate && uniqueFilterDates.push(nextPreSelectedDate);
+        const { selectableDates, preSelectedDate } = prepareSelectableFilterDates(filters);
 
-        const acceptVETs = (callBackOuter) => {
-            let vets = getVets({ isTestMode });
-            console.log('Ready VETS', { vets });
-            let acceptables = [];
-            for (let i = 0; i < vets.length; i++) {
-                const vet = vets[i];
-                const acceptableFilter = isVTOAcceptable(filters, vet);
-                if (!!acceptableFilter) {
-                    acceptables.push({ vet, filter: acceptableFilter });
-                }
-            }
-            console.log('Acceptable VETS', { acceptables });
-
-            function compare(a, b) {
-                if (getArryObjectIndex(a.filter, filters) < getArryObjectIndex(b.filter, filters))
-                    return -1;
-                if (getArryObjectIndex(a.filter, filters) > getArryObjectIndex(b.filter, filters))
-                    return 1;
-                return 0;
-            }
-
-            const acceptablesSortedAsFilters = acceptables.sort(compare);
-            console.log('Acceptable Sorted As Filters VETS', { acceptablesSortedAsFilters });
-
-            looper(acceptablesSortedAsFilters, (acceptable, callBack) => {
-                const vet = acceptable.vet;
-                const filter = acceptable.filter;
-                acceptVET(vet, isTestMode, () => {
-                    !isTestMode && removeFilter('vetFilters', filter);
-                    vets = vets.filter(v => {
-                        if (JSON.stringify(v) === JSON.stringify(vet)) return false;
-                        return true;
-                    });
-                    callBack();
-                });
-            }, callBackOuter, 'AcceptVETSLooper', 200);
-        }
         let secondsUsed = 0;
         const timeRecorder = setInterval(() => secondsUsed = secondsUsed + 1000, 1000);
 
-        looper(uniqueFilterDates, (date, callBack, index) => {
-            const notWaitForLoading = date === preSelectedDate || index === uniqueFilterDates.length - 1;
-            const shouldNotScroll = index === 0 || (index === uniqueFilterDates.length - 1 && uniqueFilterDates.length === 2)
+        looper(selectableDates, (date, callBack, index) => {
+            const notWaitForLoading = date === preSelectedDate || index === selectableDates.length - 1;
+            const shouldNotScroll = index === 0 || (index === selectableDates.length - 1 && selectableDates.length === 2)
             selectDay(date, () => {
-                acceptVETs(callBack)
+                acceptAllAcceptables(filters, callBack, { isTestMode })
             }, !notWaitForLoading, !shouldNotScroll, isTestMode);
         }, () => {
-            if (!filters.length || refreshMode === "Off") return;
-            let reloadDelay = refreshMode === 'Smart' ? 20000 : 0;
             clearInterval(timeRecorder);
-            const currentMins = new Date().getMinutes();
-            console.log(currentMins);
-            if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-                reloadDelay = refreshMode === 'Smart' ? 1000 : 0;
-            }
-            const reloadAfter = reloadDelay - secondsUsed < 0 ? 0 : reloadDelay - secondsUsed;
-            console.log(`Reloading in ${reloadAfter / 1000} seconds`);
-            setTimeout(() => window.location.reload(), reloadAfter);
+            finalCallBack(filters, secondsUsed, preference);
         }, 'SelectDayLooper', 0, 0)
     });
 
@@ -294,7 +308,7 @@ const loaded = () => {
 }
 
 console.clear();
-setTimeout(()=>!!setUserInfo&&setUserInfo(), 100);
+setTimeout(() => !!setUserInfo && setUserInfo(), 100);
 setUserInfo();
 chrome.storage.local.get('preference', function (result) {
     const preference = result.preference || {};
@@ -306,7 +320,7 @@ const inverval = setInterval(() => {
     if (loaded()) {
         clearInterval(inverval);
         chrome.storage.local.get('preference', function (result) {
-            const preference = result.preference;
+            const preference = result.preference || {};
             main(preference);
         });
         const GenericErrorContainer = document.querySelector('div[data-test-id="GenericErrorPageLayout"]');
