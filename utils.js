@@ -43,6 +43,7 @@ function formatTime(date) {
 function intToTime(intTime) {
     let minutes = intTime % 60;
     let hours = (intTime - minutes) / 60;
+    if (hours > 24) hours = hours - 24;
     const ampm = hours >= 12 ? 'p.m.' : 'a.m.';
     hours = hours % 12;
     hours = hours ? hours : 12; // Handle midnight (0 hours)
@@ -88,6 +89,21 @@ const getKey = (obj) => {
     return op;
 }
 
+const removeFilter = (filterKey, filterToDelete, callBack) => {
+    chrome.storage.local.get(null, function (result) {
+        const filters = result[filterKey] || [];
+        const newFilters = filters.filter(filter => {
+            if (JSON.stringify(filterToDelete) === JSON.stringify(filter)) {
+                return false
+            }
+            return true;
+        });
+        chrome.storage.local.set({ ...result, [filterKey]: newFilters }).then(()=>{
+            !!callBack && callBack();
+        });
+    });
+}
+
 const refreshFilters = (filterKey) => {
     chrome.storage.local.get(null, function (result) {
         const filters = result[filterKey] || [];
@@ -102,21 +118,29 @@ const refreshFilters = (filterKey) => {
         const filtersContainer = document.querySelector('#filters');
         if (!filtersContainer) return;
         let filtersHTML = ``;
-        filters.forEach(filter => {
+        filters.forEach((filter, index) => {
             const startOp = getKey(filter.startTime);
             const endOp = getKey(filter.endTime);
             const startTime = filter.startTime[startOp];
             const endTime = filter.endTime[endOp];
             filtersHTML = filtersHTML + `
-        <div class="card flex flex-column gap-10">
-          <h4>${filter.date} (${filter.forName})</h4>
-          <div>Start Time <i>(${opToText(startOp)})</i>: <b>${intToTime(startTime)}</b></div>
-          <div>End Time <i>(${opToText(endOp)})</i>: <b>${intToTime(endTime)}</b></div>
-          <div>${intToString(endTime - startTime)}</div>
-        </div>
-        `;
+            <div class="card flex flex-column gap-10">
+            <div class="flex space-between">
+                <h4>${filter.date} (${filter.forName})</h4> 
+                <button class="button button-sm text-small" id="filter-btn-${index}" >Delete</button>
+            </div>
+            <div>Start Time <i>(${opToText(startOp)})</i>: <b>${intToTime(startTime)}</b></div>
+            <div>End Time <i>(${opToText(endOp)})</i>: <b>${intToTime(endTime)}</b></div>
+            <div>${intToString(endTime - startTime)}</div>
+            </div>
+            `;
         });
         filtersContainer.innerHTML = filtersHTML || `<div><center>No filter</center></div>`;
+        filters.forEach((filter, index)=>{
+            const deleteFilter = ()=>{removeFilter(filterKey, filter, ()=>refreshFilters(filterKey));};
+            const filterBtn = document.querySelector(`[id="filter-btn-${index}"]`);
+            filterBtn.addEventListener('click', deleteFilter);
+        });
     })
 }
 
@@ -126,6 +150,7 @@ const addFilter = (filterKey) => {
     const endDatePicker = document.getElementById('endDate');
     const startDate = new Date(startDatePicker.value);
     const endDate = new Date(endDatePicker.value);
+    console.log(formatTime(startDate), formatTime(endDate));
     const startTime = convertTimeToMins(formatTime(startDate));
     const endTime = convertTimeToMins(formatTime(endDate), startTime);
     const opStart = document.querySelector("#startOp").value;
@@ -144,20 +169,6 @@ const addFilter = (filterKey) => {
     chrome.storage.local.get(null, function (result) {
         const filters = result[filterKey] || [];
         const newFilters = [...filters, data];
-        chrome.storage.local.set({ ...result, [filterKey]: newFilters });
-        refreshFilters(filterKey);
-    });
-}
-
-const removeFilter = (filterKey, filterToDelete, callBack) => {
-    chrome.storage.local.get(null, function (result) {
-        const filters = result[filterKey] || [];
-        const newFilters = filters.filter(filter => {
-            if (JSON.stringify(filterToDelete) === filter) {
-                return false
-            }
-            return true;
-        });
         chrome.storage.local.set({ ...result, [filterKey]: newFilters });
         refreshFilters(filterKey);
     });

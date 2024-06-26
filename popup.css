@@ -157,8 +157,13 @@ body {
   border-radius: 5px;
 }
 
+.button-sm {
+  padding: 3px 6px;
+}
+
 .button:hover {
   border: 1px solid black;
+  cursor: pointer;
 }
 
 .card {
