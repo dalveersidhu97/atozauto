@@ -375,15 +375,17 @@ const loaded = () => {
 console.clear();
 setTimeout(() => !!setUserInfo && setUserInfo(), 100);
 setUserInfo();
+let noResponseReloadTimeout = undefined;
 chrome.storage.local.get('preference', function (result) {
     const preference = result.preference || {};
     if (preference.refreshMode !== 'Off') {
-        setTimeout(() => window.location.reload(), 3 *1000 * 60);
+        noResponseReloadTimeout = setTimeout(() => window.location.reload(), 3 *1000 * 60);
     }
 });
 const inverval = setInterval(() => {
     if (loaded()) {
         clearInterval(inverval);
+        !!noResponseReloadTimeout && clearTimeout(noResponseReloadTimeout);
         chrome.storage.local.get('preference', function (result) {
             const preference = result.preference || {};
             main(preference);
