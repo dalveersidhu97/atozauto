@@ -56,11 +56,11 @@ const acceptVET = (vet, isTestMode, callBack) => {
                 }
                 pressModalButtonTemp(/^done$/i, () => {
                     clearInterval(interval);
-                    callBack();
+                    callBack(true);
                 });
                 pressModalButtonTemp(/^ok$/i, () => {
                     clearInterval(interval);
-                    callBack();
+                    callBack(false);
                 });
                 counter++;
             }, 100);
@@ -227,8 +227,8 @@ const acceptAllAcceptables = (filters, callBackOuter, { isTestMode }) => {
     looper(acceptablesSortedAsFilters, (acceptable, callBack) => {
         const vet = acceptable.vet;
         const filter = acceptable.filter;
-        acceptVET(vet, isTestMode, () => {
-            !isTestMode && removeFilter('vetFilters', filter);
+        acceptVET(vet, isTestMode, (vetAccepted) => {
+            !isTestMode && vetAccepted && removeFilter('vetFilters', filter);
             vets = vets.filter(v => {
                 if (JSON.stringify(v) === JSON.stringify(vet)) return false;
                 return true;
@@ -257,30 +257,96 @@ const prepareSelectableFilterDates = (filters) => {
     return { selectableDates, preSelectedDate };
 }
 
-const finalCallBack = (filters, secondsUsed, preference) => {
+function scheduleFunctionAtTime(hour, minute, second, millisecond, callback) {
+    const now = new Date();
+    const scheduledTime = new Date();
+    scheduledTime.setHours(hour);
+    scheduledTime.setMinutes(minute);
+    scheduledTime.setSeconds(second);
+    scheduledTime.setMilliseconds(millisecond);
+
+    if (scheduledTime <= now) {
+        scheduledTime.setDate(scheduledTime.getDate() + 1); // Schedule for tomorrow if time has passed today
+    }
+    const delay = scheduledTime.getTime() - now.getTime();
+    setTimeout(callback, delay);
+    const formattedScheduleTime = scheduledTime.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+    console.log('Reloading at', formattedScheduleTime, `(in ${(delay/1000).toFixed(2)}s)`);
+}
+
+const finalCallBack = (filters, preference) => {
+    const secheduledDate = new Date();
+    const now = new Date();
     const refreshMode = preference.refreshMode; // Smart | Full Speed
     if (!filters.length || refreshMode === "Off") return;
-    let reloadDelay = refreshMode === 'Smart' ? 20000 : 0;
-    const currentMins = new Date().getMinutes();
-    console.log(currentMins);
-    if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-        reloadDelay = refreshMode === 'Smart' ? 1000 : 0;
+    if (refreshMode==='Full Speed')
+        return window.location.reload();
+    
+    const currentMins = now.getMinutes();
+    const currentSeconds = now.getSeconds();
+    const hotMinsMultiplier = preference.hotMinsMultiplier || 5;
+    const hotSecondsLessThan = preference.hotSecondsLessThan || 10;
+    const incrementMinsBy = preference.incrementMinsBy || 3;
+    const incrementSecondsBy = preference.incrementSecondsBy || 3;
+
+    const nextHotMins = currentMins + hotMinsMultiplier - currentMins%hotMinsMultiplier;
+    const incrementMins = () => {
+        if (currentMins+incrementMinsBy <= nextHotMins) {
+            secheduledDate.setMinutes(currentMins+incrementMinsBy);
+        }else {
+            secheduledDate.setMinutes(nextHotMins)
+        }
     }
-    const reloadAfter = reloadDelay - secondsUsed < 0 ? 0 : reloadDelay - secondsUsed;
-    console.log(`Reloading in ${reloadAfter / 1000} seconds`);
-    setTimeout(() => window.location.reload(), reloadAfter);
+
+    if (currentMins%hotMinsMultiplier===0) {
+        if (currentSeconds<hotSecondsLessThan) {
+            return window.location.reload();
+        }else {
+            incrementMins();
+            secheduledDate.setSeconds(0);
+        }
+    }else {
+        if (currentSeconds<hotSecondsLessThan) {
+            secheduledDate.setSeconds(
+                secheduledDate.getSeconds()
+                +(hotSecondsLessThan<incrementSecondsBy?hotSecondsLessThan:incrementSecondsBy)
+            );
+        }else {
+            incrementMins();
+            secheduledDate.setSeconds(0);
+        }
+    }
+    secheduledDate.setMilliseconds(50);
+
+    const delay = secheduledDate.getTime() - now.getTime();
+    setTimeout(()=>window.location.reload(), delay);
+    const formattedScheduleTime = secheduledDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+    console.log('Reloading at', formattedScheduleTime, `(in ${(delay/1000).toFixed(2)}s)`);
+    setInterval(()=>{
+        const reloadingIn = ((secheduledDate.getTime() - new Date().getTime())/1000).toFixed(2);
+        console.log('Realoding in', `${reloadingIn<0?0:reloadingIn}s`);
+    }, 5000);
 }
 
 const main = (preference) => {
+    console.log({preference});
     const refreshMode = preference.refreshMode; // Smart | Full Speed
     const isTestMode = preference.testMode === 'On'; // On | Off
+
     chrome.storage.local.get('vetFilters', function (result) {
         const filters = result.vetFilters || [];
         console.log('vetFilters', filters);
         const { selectableDates, preSelectedDate } = prepareSelectableFilterDates(filters);
-
-        let secondsUsed = 0;
-        const timeRecorder = setInterval(() => secondsUsed = secondsUsed + 1000, 1000);
 
         looper(selectableDates, (date, callBack, index) => {
             const notWaitForLoading = date === preSelectedDate || index === selectableDates.length - 1;
@@ -289,8 +355,7 @@ const main = (preference) => {
                 acceptAllAcceptables(filters, callBack, { isTestMode })
             }, !notWaitForLoading, !shouldNotScroll, isTestMode);
         }, () => {
-            clearInterval(timeRecorder);
-            finalCallBack(filters, secondsUsed, preference);
+            finalCallBack(filters, preference);
         }, 'SelectDayLooper', 0, 0)
     });
 
@@ -313,7 +378,7 @@ setUserInfo();
 chrome.storage.local.get('preference', function (result) {
     const preference = result.preference || {};
     if (preference.refreshMode !== 'Off') {
-        setTimeout(() => window.location.reload(), 1000 * 60);
+        setTimeout(() => window.location.reload(), 3 *1000 * 60);
     }
 });
 const inverval = setInterval(() => {

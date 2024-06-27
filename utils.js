@@ -195,15 +195,26 @@ const initPrefrence = (callBack) => {
     console.log('initPrefrence')
     chrome.storage.local.get(null, function (result) {
         if(!result.preference)
-            chrome.storage.local.set({ ...result, ['preference']: { refreshMode: 'Smart', testMode: 'Off' } });
+            chrome.storage.local.set({ 
+                ...result, 
+                ['preference']: { 
+                    refreshMode: 'Smart', 
+                    testMode: 'Off',
+                    hotMinsMultiplier: 5,
+                    hotSecondsLessThan: 10,
+                    incrementMinsBy: 3,
+                    incrementSecondsBy: 3,
+                }
+            });
         !!callBack && setTimeout(callBack, 500);
     })
 }
 
 const setPreference = (key, value, callBack) => {
     chrome.storage.local.get(null, function (result) {
-        chrome.storage.local.set({ ...result, ['preference']: { ...(result.preference || {}), [key]: value } });
-        !!callBack && setTimeout(callBack, 500);
+        chrome.storage.local.set({ ...result, ['preference']: { ...(result.preference || {}), [key]: value } }).then(()=>{
+            !!callBack && callBack();
+        });
     })
 }
 
@@ -215,10 +226,20 @@ const refreshPrefrence = () => {
         const preference = result.preference || {};
         const refreshMode = preference.refreshMode;
         const testMode = preference.testMode;
+        const hotMinsMultiplier = preference.hotMinsMultiplier;
+        const hotSecondsLessThan = preference.hotSecondsLessThan;
+        const incrementMinsBy = preference.incrementMinsBy;
+        const incrementSecondsBy = preference.incrementSecondsBy;
         console.log(preference);
 
+        document.getElementById("hotMinsMultiplier").value = hotMinsMultiplier;
+        document.getElementById("hotSecondsLessThan").value = hotSecondsLessThan;
+        document.getElementById("incrementMinsBy").value = incrementMinsBy;
+        document.getElementById("incrementSecondsBy").value = incrementSecondsBy;
+        document.getElementById("smartModeSettings").style.display = "none";
         if (refreshMode === "Smart") {
             document.getElementById("Smart").checked = true;
+            document.getElementById("smartModeSettings").style.display = "flex";
         } else if (refreshMode === "Full Speed") {
             document.getElementById("Full Speed").checked = true;
         } else if (refreshMode === "Off") {
@@ -247,6 +268,12 @@ const addPrefrenceListeners = () => {
             if (this.checked) {
                 setPreference('testMode', this.value, refreshPrefrence);
             }
+        });
+    });
+    const smartModeSettingsInputs = document.querySelectorAll('input[aria-label="smartModeInput"]');
+    smartModeSettingsInputs.forEach(function (input) {
+        input.addEventListener("change", function () {
+            setPreference(input.getAttribute('id'), +input.value, refreshPrefrence);
         });
     });
 }

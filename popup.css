@@ -79,6 +79,10 @@ body {
   flex-grow: 1;
 }
 
+.w-fit {
+  width: fit-content;
+}
+
 .container {
   width: 100%;
   gap: 20px;

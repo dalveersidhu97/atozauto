@@ -47,6 +47,25 @@
               <input type="radio" id="Off" name="refreshMode" value="Off" />
               <label for="Off" style="padding: 0px 10px 0 5px;">Off</label>
             </div>
+            <br />
+            <div id="smartModeSettings" class="flex flex-column gap-5">
+              <div>
+                <label>Minutes Multiplier: </label> 
+                <input type="number" class="w-fit" min="1" max="60" aria-label="smartModeInput" id="hotMinsMultiplier" />
+              </div>
+              <div>
+                <label>Minutes Incrementor: </label> 
+                <input type="number" class="w-fit" min="1" max="60" aria-label="smartModeInput" id="incrementMinsBy" />
+              </div>
+              <div>
+                <label>Seconds Less Than: </label> 
+                <input type="number" class="w-fit" min="1" max="3600" aria-label="smartModeInput" id="incrementSecondsBy" />
+              </div>
+              <div>
+                <label>Seconds Incrementor: </label> 
+                <input type="number" class="w-fit" min="1" max="3600" aria-label="smartModeInput" id="hotSecondsLessThan" />
+              </div>
+            </div>
           </div>
           <div class="flex flex-column">
             <label for="testMode" style="font-weight: 600;padding: 0px 10px 10px 0;">Test Mode: </label>
