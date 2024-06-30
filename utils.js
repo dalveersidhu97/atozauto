@@ -205,8 +205,9 @@ const initPrefrence = (callBack) => {
                     incrementMinsBy: 3,
                     incrementSecondsBy: 3,
                 }
+            }).then(()=>{
+                !!callBack && callBack();
             });
-        !!callBack && setTimeout(callBack, 500);
     })
 }
 

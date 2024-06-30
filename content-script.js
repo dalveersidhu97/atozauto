@@ -1,4 +1,4 @@
-const getVtos = () => {
+const getVtos = ({ isTestMode }) => {
     const vtos = [];
     const expanders = document.querySelectorAll('div[data-test-component="StencilExpander"]');
     expanders.forEach(expander => {
@@ -30,8 +30,12 @@ const getVtos = () => {
     return vtos;
 }
 
-const acceptVTO = (vto, callBack) => {
+const acceptVTO = (vto, isTestMode, callBack) => {
     console.log('Click VTO Button', vto);
+    if (isTestMode) {
+        setTimeout(() => closeModal(callBack), 2000);
+        return;
+    }
     vto.button.click()
     setTimeout(() => {
         pressModalButton(/^Accept VTO$/i, () => {
@@ -47,79 +51,92 @@ const acceptVTO = (vto, callBack) => {
     }, 1000)
 }
 
-const main = () => {
+const acceptAllAcceptables = (filters, callBackOuter, { isTestMode }) => {
+    let vtos = getVtos({ isTestMode });
+    console.log('Ready VTOs', { vtos });
+    let acceptables = [];
+    for (let i = 0; i < vtos.length; i++) {
+        const vto = vtos[i];
+        const acceptableFilter = isVTOAcceptable(filters, vto);
+        if (!!acceptableFilter) {
+            acceptables.push({ vto, filter: acceptableFilter });
+        }
+    }
+    console.log('Acceptable VTOs', { acceptables });
+    const acceptablesSortedAsFilters = sortArray(acceptables, filters);
+    console.log('Acceptable Sorted As Filters VTOs', { acceptablesSortedAsFilters });
 
+    looper(acceptablesSortedAsFilters, (acceptable, callBack) => {
+        const vto = acceptable.vto;
+        const filter = acceptable.filter;
+        acceptVTO(vto, isTestMode, () => {
+            removeFilter('filters', filter);
+            vtos = vtos.filter(v => {
+                if (JSON.stringify(v) === JSON.stringify(vto)) return false;
+                return true;
+            });
+            callBack();
+        });
+    }, callBackOuter, 'AcceptVTOsLooper', 200);
+}
+
+const main = (preference) => {
+    console.log({preference});
     chrome.storage.local.get('filters', function (result) {
+        const refreshMode = preference.refreshMode; // Smart | Full Speed
+        const isTestMode = preference.testMode === 'On'; // On | Off
         const userName = getUserInfo().name;
-        const filters = result.filters.filter(f => f.forName.toLowerCase() === userName.toLowerCase()) || [];
+        const filters = (result.filters||[]).filter(f => f.forName.toLowerCase() === userName.toLowerCase()) || [];
         console.log('filters', filters);
         if (!filters.length) return;
-
-        let vtos = getVtos();
-        console.log({ vtos });
-        let acceptableVTOs = 0;
-        const gapSeconds = 3500;
-        let reloadAfter = 20000;
-
-        for (let i = 0; i < vtos.length; i++) {
-            const vto = vtos[i];
-            const matchedFilter = isVTOAcceptable(filters, vto);
-            if (!!matchedFilter) {
-                setTimeout(() => {
-                    acceptVTO(vto, () => {
-                        removeFilter('filters', matchedFilter);
-                        vtos = vtos.filter(v => {
-                            if (JSON.stringify(v) === JSON.stringify(vto)) return false;
-                            return true;
-                        });
-                    });
-                }, acceptableVTOs * gapSeconds);
-                acceptableVTOs++;
-            }
-        }
-        const currentMins = new Date().getMinutes();
-        console.log(currentMins);
-        if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
-            reloadAfter = 600;
-        }
-        if (acceptableVTOs) {
-            reloadAfter = reloadAfter + acceptableVTOs * gapSeconds;
-        }
-        filters.length > 0 && console.log(`Accepted ${acceptableVTOs} VTO(s), Reloading in: `, reloadAfter / 1000, 'Seconds');
-
-        filters.length > 0 && setTimeout(() => window.location.reload(), reloadAfter)
+    
+        acceptAllAcceptables(filters, () => {
+            finalCallBack(filters, preference);
+        }, { isTestMode });
     });
-
 }
 
-const loaded = () => {
-    const h1 = document.querySelector('h1[data-test-component="StencilH1"]');
-    if (!h1) return false;
-    const vtoSpinner = document.querySelector('svg[data-test-id="VtoLandingPage_Spinner"]');
-    if (!!vtoSpinner) {
-        return false;
-    };
-    console.log('LOADED')
-    return true;
-}
+// const mainDep = () => {
 
-console.clear();
-setUserInfo();
-const inverval = setInterval(() => {
-    if (loaded()) {
-        clearInterval(inverval);
-        main();
-    }
-}, 200);
+//     chrome.storage.local.get('filters', function (result) {
+//         const userName = getUserInfo().name;
+//         const filters = result.filters.filter(f => f.forName.toLowerCase() === userName.toLowerCase()) || [];
+//         console.log('filters', filters);
+//         if (!filters.length) return;
 
-const sessionInterval = setInterval(() => {
-    const sessionModal = document.querySelector('div[aria-describedby="sr-session-expires-modal-message"]');
-    if (!sessionModal) return;
-    const styles = window.getComputedStyle(sessionModal);
-    if (styles.display !== 'none') {
-        const stayLoggedInButton = sessionModal.querySelector('#session-expires-modal-btn-stay-in');
-        stayLoggedInButton.click();
-        sessionModal.style.display = 'none';
-        console.log('modal is visible')
-    }
-}, 300);
+//         let vtos = getVtos();
+//         console.log({ vtos });
+//         let acceptableVTOs = 0;
+//         const gapSeconds = 3500;
+//         let reloadAfter = 20000;
+
+//         for (let i = 0; i < vtos.length; i++) {
+//             const vto = vtos[i];
+//             const matchedFilter = isVTOAcceptable(filters, vto);
+//             if (!!matchedFilter) {
+//                 setTimeout(() => {
+//                     acceptVTO(vto, false, () => {
+//                         removeFilter('filters', matchedFilter);
+//                         vtos = vtos.filter(v => {
+//                             if (JSON.stringify(v) === JSON.stringify(vto)) return false;
+//                             return true;
+//                         });
+//                     });
+//                 }, acceptableVTOs * gapSeconds);
+//                 acceptableVTOs++;
+//             }
+//         }
+//         const currentMins = new Date().getMinutes();
+//         console.log(currentMins);
+//         if ((currentMins > 28 && currentMins < 32) || (currentMins > 58 || currentMins < 2) || (currentMins > 43 && currentMins < 47) || (currentMins > 13 && currentMins < 17)) {
+//             reloadAfter = 600;
+//         }
+//         if (acceptableVTOs) {
+//             reloadAfter = reloadAfter + acceptableVTOs * gapSeconds;
+//         }
+//         filters.length > 0 && console.log(`Accepted ${acceptableVTOs} VTO(s), Reloading in: `, reloadAfter / 1000, 'Seconds');
+
+//         filters.length > 0 && setTimeout(() => window.location.reload(), reloadAfter)
+//     });
+
+// }

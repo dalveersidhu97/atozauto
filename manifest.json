@@ -14,12 +14,12 @@
     },
     {
       "matches": ["https://atoz.amazon.work/voluntary_time_off/*"],
-      "js": ["content-script.js"],
+      "js": ["content-script.js", "init.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://atoz.amazon.work/shifts/schedule/find*"],
-      "js": ["vet-script.js"],
+      "js": ["vet-script.js", "init.js"],
       "run_at": "document_idle"
     }
   ]

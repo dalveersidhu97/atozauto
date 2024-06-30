@@ -215,3 +215,97 @@ const closeModal = (callBack) => {
     })
 
 }
+
+const sortArray = (acceptables, filters) => {
+    function compare(a, b) {
+        if (getArryObjectIndex(a.filter, filters) < getArryObjectIndex(b.filter, filters))
+            return -1;
+        if (getArryObjectIndex(a.filter, filters) > getArryObjectIndex(b.filter, filters))
+            return 1;
+        return 0;
+    }
+
+    return acceptables.sort(compare);
+}
+
+const looper = (arr, fn, whenDoneFn, loopName, delayTime, initialDelay, index) => {
+    console.log(loopName, ': Entering', (index || 0) + 1, '/', arr.length);
+    let i = index || 0;
+    let delay = delayTime || 0;
+    let intialDel = initialDelay || 0;
+    if (arr.length > i) {
+        console.log(loopName, ': Starting');
+        const fnToCall = () => fn(arr[i], () => {
+            if (arr.length - 1 > i) {
+                loopName && console.log(loopName, ': Next');
+                looper(arr, fn, whenDoneFn, loopName, delay, initialDelay, i + 1);
+            } else {
+                whenDoneFn();
+                loopName && console.log(loopName, ': Done')
+            };
+        }, i);
+        setTimeout(fnToCall, (i === 0 ? 0 : delay) + (i === 0 ? intialDel : 0));
+    } else {
+        whenDoneFn();
+        loopName && console.log(loopName, ': End')
+    }
+}
+
+const finalCallBack = (filters, preference) => {
+    const secheduledDate = new Date();
+    const now = new Date();
+    const refreshMode = preference.refreshMode; // Smart | Full Speed
+    if (!filters.length || refreshMode === "Off") return;
+    if (refreshMode==='Full Speed')
+        return window.location.reload();
+    
+    const currentMins = now.getMinutes();
+    const currentSeconds = now.getSeconds();
+    const hotMinsMultiplier = preference.hotMinsMultiplier || 5;
+    const hotSecondsLessThan = preference.hotSecondsLessThan || 10;
+    const incrementMinsBy = preference.incrementMinsBy || 3;
+    const incrementSecondsBy = preference.incrementSecondsBy || 3;
+
+    const nextHotMins = currentMins + hotMinsMultiplier - currentMins%hotMinsMultiplier;
+    const incrementMins = () => {
+        if (currentMins+incrementMinsBy <= nextHotMins) {
+            secheduledDate.setMinutes(currentMins+incrementMinsBy);
+        }else {
+            secheduledDate.setMinutes(nextHotMins)
+        }
+    }
+
+    if (currentMins%hotMinsMultiplier===0) {
+        if (currentSeconds<hotSecondsLessThan) {
+            return window.location.reload();
+        }else {
+            incrementMins();
+            secheduledDate.setSeconds(0);
+        }
+    }else {
+        if (currentSeconds<hotSecondsLessThan) {
+            secheduledDate.setSeconds(
+                secheduledDate.getSeconds()
+                +(hotSecondsLessThan<incrementSecondsBy?hotSecondsLessThan:incrementSecondsBy)
+            );
+        }else {
+            incrementMins();
+            secheduledDate.setSeconds(0);
+        }
+    }
+    secheduledDate.setMilliseconds(50);
+
+    const delay = secheduledDate.getTime() - now.getTime();
+    setTimeout(()=>window.location.reload(), delay);
+    const formattedScheduleTime = secheduledDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+    console.log('Reloading at', formattedScheduleTime, `(in ${(delay/1000).toFixed(2)}s)`);
+    setInterval(()=>{
+        const reloadingIn = ((secheduledDate.getTime() - new Date().getTime())/1000).toFixed(2);
+        console.log('Realoding in', `${reloadingIn<0?0:reloadingIn}s`);
+    }, 5000);
+}
